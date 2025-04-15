@@ -17,7 +17,7 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ["user", "pilot", "drone_owner"],
+      enum: ["farmer", "pilot", "drone_owner"],
       required: true,
     },
     city: {
@@ -64,6 +64,10 @@ const cropSchema = new mongoose.Schema({
 export const cropModel = mongoose.model("Crop", cropSchema);
 
 const licenseDetailSchema = new mongoose.Schema({
+  userId: {
+    type: mongoose.Types.ObjectId,
+    ref: "User",
+  },
   license_number: String,
   valid_upto: String,
   flying_exp: String,
@@ -81,6 +85,10 @@ export const licenseDetailModel = mongoose.model(
 );
 
 const droneInfoSchema = new mongoose.Schema({
+  userId: {
+    type: mongoose.Types.ObjectId,
+    ref: "User",
+  },
   drone_name: String,
   drone_type: String,
   drone_capacity: String,
@@ -93,4 +101,4 @@ const droneInfoSchema = new mongoose.Schema({
   ngo_name: String,
 });
 
-const DroneInfoModel = mongoose.model("DroneInfo", droneInfoSchema);
+export const DroneInfoModel = mongoose.model("DroneInfo", droneInfoSchema);
