@@ -40,8 +40,9 @@ const locationAndOtherDetailSchema = new mongoose.Schema({
   whatsapp_number: Number,
   contact_number: Number,
   aadhar_number: Number,
-  pan_number: Number,
-  location: String,
+  pan_number: String,
+  pinCode: Number,
+  State: String,
 });
 
 export const OtherDetailModel = mongoose.model(
@@ -84,21 +85,39 @@ export const licenseDetailModel = mongoose.model(
   licenseDetailSchema
 );
 
+const ScheduleSchema = new mongoose.Schema({
+  date: Date,
+  timeSlot: String,
+});
+
+export const ScheduleModel = mongoose.model("Schedule", ScheduleSchema);
+
 const droneInfoSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Types.ObjectId,
     ref: "User",
   },
-  drone_name: String,
-  drone_type: String,
-  drone_capacity: String,
-  battery_durability: String,
-  purchased_date: Date,
-  IsNGO: {
+  name: String,
+  type: String,
+  capacity: String,
+  durability: String,
+  purchasedDate: Date,
+  isNGO: {
     type: String,
     enum: ["yes", "no"],
   },
-  ngo_name: String,
+  ngoName: String,
+  schedule: [{ type: mongoose.Types.ObjectId, ref: "Schedule" }],
 });
 
 export const DroneInfoModel = mongoose.model("DroneInfo", droneInfoSchema);
+
+const droneOwnerSchema = new mongoose.Schema({
+  userId: {
+    type: mongoose.Types.ObjectId,
+    ref: "User",
+  },
+  drones: [{ type: mongoose.Types.ObjectId, ref: "DroneInfo" }],
+});
+
+export const droneOwnerModel = mongoose.model("DroneOwner", droneOwnerSchema);
