@@ -1,32 +1,32 @@
 import { Request, Response } from "express";
-import { userModel } from "../models/models";
+import { droneOwnerModel, userModel } from "../models/models";
 import bcryptjs from "bcryptjs";
 import jwt from "jsonwebtoken";
 
-export const registerUser = async (
-  req: Request,
-  res: Response
-): Promise<Response> => {
+export const registerUser = async (req: Request, res: Response) => {
   const { name, email, password, city, role } = req.body;
 
   if (!name || !email || !password || !city || !role) {
-    return res.status(401).json({
+    res.status(401).json({
       message: "Please fill the required fields",
     });
+    return;
   }
 
   if (password.length < 8 || password.length >= 20) {
-    return res.status(401).json({
+    res.status(401).json({
       message: "Password should be between 8 and 20 characters",
     });
+    return;
   }
 
   const user = await userModel.findOne({ email });
 
   if (user) {
-    return res.status(401).json({
+    res.status(401).json({
       message: "Email already registered",
     });
+    return;
   }
 
   const hashedPassword = await bcryptjs.hash(password, 10);
@@ -40,7 +40,13 @@ export const registerUser = async (
       role,
     });
 
-    return res.status(201).json({
+    if (role === "drone_owner") {
+      await droneOwnerModel.create({
+        userId: newUser._id,
+      });
+    }
+
+    res.status(201).json({
       message: "User registered successfully",
       user: {
         name: newUser.name,
@@ -49,35 +55,36 @@ export const registerUser = async (
         role: newUser.role,
       },
     });
+    return;
   } catch (error) {
     console.error("Registration Error:", error);
-    return res.status(500).json({
+    res.status(500).json({
       message: "Internal Server Error",
     });
+    return;
   }
 };
 
-export const loginUser = async (
-  req: Request,
-  res: Response
-): Promise<Response> => {
+export const loginUser = async (req: Request, res: Response) => {
   const { email, password } = req.body;
 
   const user = await userModel.findOne({ email });
 
   if (!user) {
-    return res.status(401).json({
+    res.status(401).json({
       message: "Email not registered yet. Please register yourself.",
     });
+    return;
   }
 
   try {
     const isPasswordCorrect = await bcryptjs.compare(password, user.password);
 
     if (!isPasswordCorrect) {
-      return res.status(401).json({
+      res.status(401).json({
         message: "Incorrect credentials",
       });
+      return;
     }
 
     const token = jwt.sign({ userId: user._id }, `${process.env.SECRET_KEY}`);
@@ -85,51 +92,51 @@ export const loginUser = async (
     res.cookie("access_token", token);
     // localStorage.setItem("access_token",token)
 
-    return res.status(201).json({
+    res.status(201).json({
       message: "User logged in successfully",
       token,
     });
+    return;
   } catch (error) {
     console.log("Error is " + error);
-    return res.status(500).json({
+    res.status(500).json({
       message: "Internal Server Error",
     });
+    return;
   }
 };
 
-export const getUser = async (
-  req: Request,
-  res: Response
-): Promise<Response> => {
+export const getUser = async (req: Request, res: Response) => {
   //@ts-ignore
   const userId = req.user;
 
   const user = await userModel.findById({ _id: userId }).select("-password");
 
   if (!user) {
-    return res.status(401).json({
+    res.status(401).json({
       message: "User id not matched",
     });
+    return;
   }
 
   try {
-    return res.status(201).json({
+    res.status(201).json({
       user,
     });
+    return;
   } catch (err) {
-    return res.status(500).json({
+    res.status(500).json({
       message: "Internal Server Error",
     });
+    return;
   }
 };
 
-export const logoutUser = async (
-  req: Request,
-  res: Response
-): Promise<Response> => {
+export const logoutUser = async (req: Request, res: Response) => {
   res.clearCookie("access_token");
   // localStorage.removeItem("access_token");
-  return res.status(201).json({
+  res.status(201).json({
     message: "You are logged out",
   });
+  return;
 };
