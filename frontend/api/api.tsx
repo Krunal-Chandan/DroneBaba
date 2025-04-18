@@ -1,61 +1,68 @@
 import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Replace with your laptop's IP address if testing on a mobile device
-// const API_URL = 'http://localhost:8000'; // Use http://<your-laptop-ip>:8000 for mobile testing
-const API_URL = 'http://192.168.204.244:8000'; // Use http://<your-laptop-ip>:8000 for mobile testing
+const API_URL = 'http://192.168.162.244:3000';
 
-export const api = {
-  // Register a new user
+const api = {
   register: async (user: { name: string; email: string; password: string; city: string; role: string }) => {
-    const response = await axios.post(`${API_URL}/register`, user);
-    return response.data;
+    try {
+      const response = await axios.post(`${API_URL}/api/v1/user/register`, user);
+      return response.data.user; // Expecting { name, email, city, role, _id } from server
+    } catch (error: any) {
+      if (error.response && error.response.data && error.response.data.message) {
+        throw new Error(error.response.data.message);
+      } else {
+        throw new Error('Something went wrong. Please try again.');
+      }
+    }
   },
 
-  // Login a user
-  login: async (user: { email: string; password: string }) => {
-    const response = await axios.post(`${API_URL}/login`, user);
-    return response.data;
+  login: async (credentials: { email: string; password: string }) => {
+    try {
+      const response = await axios.post(`${API_URL}/api/v1/user/login`, credentials);
+      const { token } = response.data;
+      await AsyncStorage.setItem('access_token', token); // Store token
+      return token;
+    } catch (error: any) {
+      if (error.response && error.response.data && error.response.data.message) {
+        throw new Error(error.response.data.message);
+      } else {
+        throw new Error('Login failed. Please try again.');
+      }
+    }
   },
 
-  // Fetch all users
-  getAllUsers: async () => {
-    const response = await axios.get(`${API_URL}/users`);
-    return response.data;
+  getUser: async () => {
+    try {
+      const token = await AsyncStorage.getItem('access_token');
+      if (!token) throw new Error('No token found. Please log in.');
+      const response = await axios.get(`${API_URL}/api/v1/user/getUser`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return response.data.user; // Expecting user object without password
+    } catch (error: any) {
+      if (error.response && error.response.data && error.response.data.message) {
+        throw new Error(error.response.data.message);
+      } else {
+        throw new Error('Failed to fetch user. Please try again.');
+      }
+    }
   },
 
-  // Create a farmer
-  createFarmer: async (farmer: any) => {
-    const response = await axios.post(`${API_URL}/farmers`, farmer);
-    return response.data;
-  },
-
-  // Get a farmer by ID
-  getFarmer: async (farmerId: number) => {
-    const response = await axios.get(`${API_URL}/farmers/${farmerId}`);
-    return response.data;
-  },
-
-  // Create a drone owner
-  createDroneOwner: async (droneOwner: any) => {
-    const response = await axios.post(`${API_URL}/drone_owners`, droneOwner);
-    return response.data;
-  },
-
-  // Get a drone owner by ID
-  getDroneOwner: async (droneOwnerId: number) => {
-    const response = await axios.get(`${API_URL}/drone_owners/${droneOwnerId}`);
-    return response.data;
-  },
-
-  // Create a pilot
-  createPilot: async (pilot: any) => {
-    const response = await axios.post(`${API_URL}/pilots`, pilot);
-    return response.data;
-  },
-
-  // Get a pilot by ID
-  getPilot: async (pilotId: number) => {
-    const response = await axios.get(`${API_URL}/pilots/${pilotId}`);
-    return response.data;
+  logout: async () => {
+    try {
+      const token = await AsyncStorage.getItem('access_token');
+      if (token) {
+        await axios.post(`${API_URL}/api/v1/user/logout`, {}, { headers: { Authorization: `Bearer ${token}` } });
+        await AsyncStorage.removeItem('access_token');
+        await AsyncStorage.removeItem('currentUser'); // Clear user data
+      }
+      return { success: true };
+    } catch (error: any) {
+      throw new Error('Logout failed. Please try again.');
+    }
   },
 };
+
+export { api };

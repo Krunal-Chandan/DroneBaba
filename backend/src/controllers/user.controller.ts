@@ -43,6 +43,7 @@ export const registerUser = async (
     return res.status(201).json({
       message: "User registered successfully",
       user: {
+        _id: newUser._id.toString(),
         name: newUser.name,
         email: newUser.email,
         city: newUser.city,
@@ -88,6 +89,7 @@ export const loginUser = async (
     return res.status(201).json({
       message: "User logged in successfully",
       token,
+      role: user.role,
     });
   } catch (error) {
     console.log("Error is " + error);
