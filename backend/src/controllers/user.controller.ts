@@ -40,7 +40,7 @@ export const registerUser = async (req: Request, res: Response) => {
       role,
     });
 
-    if (role === "drone_owner") {
+    if (role === "Drone Owner") {
       await droneOwnerModel.create({
         userId: newUser._id,
       });

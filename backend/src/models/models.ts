@@ -17,7 +17,7 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ["farmer", "pilot", "drone_owner"],
+      enum: ["Farmer", "Pilot", "Drone Owner"],
       required: true,
     },
     city: {
@@ -102,12 +102,13 @@ const droneInfoSchema = new mongoose.Schema({
   capacity: String,
   durability: String,
   purchasedDate: Date,
+  pricePerAcre: Number,
   isNGO: {
     type: String,
     enum: ["yes", "no"],
   },
   ngoName: String,
-  schedule: [{ type: mongoose.Types.ObjectId, ref: "Schedule" }],
+  schedule: [{ type: Object }],
 });
 
 export const DroneInfoModel = mongoose.model("DroneInfo", droneInfoSchema);
