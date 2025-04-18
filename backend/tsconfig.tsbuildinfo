@@ -1,1 +1,1 @@
-{"root":["./src/index.ts","./src/controllers/user.controller.ts","./src/models/models.ts","./src/routes/user.routes.ts","./src/utils/connectdb.ts","./src/utils/verifyuser.ts"],"version":"5.8.3"}
+{"root":["./src/index.ts","./src/controllers/drone.controller.ts","./src/controllers/locationdet.controller.ts","./src/controllers/user.controller.ts","./src/models/models.ts","./src/routes/drone.routes.ts","./src/routes/locationdet.routes.ts","./src/routes/user.routes.ts","./src/utils/connectdb.ts","./src/utils/verifyuser.ts"],"version":"5.8.3"}

@@ -9,13 +9,9 @@ import { verifyUser } from "../utils/verifyUser";
 
 const router = express.Router();
 
-//@ts-ignore
 router.post("/register", registerUser);
-//@ts-ignore
 router.post("/login", loginUser);
-//@ts-ignore
-router.get("/getUser", verifyUser, getUser);
-//@ts-ignore
-router.post("/logout", verifyUser, logoutUser);
+router.get("/getUser", verifyUser, getUser); //headers required
+router.post("/logout", verifyUser, logoutUser); //headers required
 
 export default router;
