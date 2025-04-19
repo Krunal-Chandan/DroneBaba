@@ -9,7 +9,7 @@ export const addDrone = async (req: Request, res: Response) => {
   const user = await userModel.findById(userId).select("role");
   const userRole = user?.role;
 
-  if (userRole !== "drone_owner") {
+  if (userRole !== "Drone Owner") {
     res.status(401).json({
       message: "Only drone owners are allowed to add drones",
     });

@@ -21,9 +21,13 @@ const api = {
   login: async (credentials: { email: string; password: string }) => {
     try {
       const response = await axios.post(`${API_URL}/api/v1/user/login`, credentials);
-      const { token } = response.data;
+      const { token, role } = response.data;
+  
+      if (!token) throw new Error("Token not received from server");
+  
       await AsyncStorage.setItem('access_token', token); // Store token
-      return token;
+  
+      return { token, role }; // Return both
     } catch (error: any) {
       if (error.response && error.response.data && error.response.data.message) {
         throw new Error(error.response.data.message);

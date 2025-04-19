@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, Image, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { api } from '@/api/api'; // Adjust the path as needed
-import { storage } from '@/api/storage'; // Adjust the path as needed
+import { api } from '@/api/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -22,37 +22,50 @@ export default function LoginScreen() {
       setError('Email and password are required!');
       return;
     }
-  
+
     setLoading(true);
     setError('');
-  
+
     try {
-      // Authenticate with the server
-      const user = await api.login({ email, password });
-      console.log('Logged in user:', user); // Log the user data
-  
-      // Fetch all users and cache them locally
-      const users = await api.getAllUsers();
-      console.log('Fetched users:', users); // Log the fetched users
-      await storage.saveUsers(users);
-  
+      // Authenticate with the server and get the token
+      const response = await api.login({ email, password });
+      // const token = response.token; // Extract token from response
+      const { token, role } = response;
+      console.log('Login token:', token);
+      console.log('Login role:', role);
+
+      // Store the token securely
+      // await AsyncStorage.setItem('access_token', token);
+
+      // Store the token and role
+      await AsyncStorage.setItem('access_token', token);
+      await AsyncStorage.setItem('user_role', role);
+
+      // Fetch user data using the token
+      // const user = await api.getUser();
+      // console.log('Fetched user:', user);
+
+
       // Save the current user
-      await storage.saveCurrentUser(user);
-  
+      // await AsyncStorage.setItem('currentUser', JSON.stringify({ ...user, id: user._id.toString() }));
+
       // Navigate to the appropriate home screen based on role
-      if (user.role === 'Farmer') {
-        router.replace({ pathname: '/Farmer/fhome', params: { userId: user.id.toString() } });
-      } else if (user.role === 'DroneOwner') {
-        router.replace({ pathname: '/drone-owner/dhome', params: { userId: user.id.toString() } });
-      } else if (user.role === 'Pilot') {
-        router.replace({ pathname: '/Pilot/pilotHome', params: { userId: user.id.toString() } });
+      if (role === 'Farmer') {
+        // router.replace({ pathname: '/Farmer/(tabs)/fhome', params: { userId: user._id.toString() } });
+        router.replace({ pathname: '/Farmer/(tabs)/fhome'});
+      } else if (role === 'Drone Owner') {
+        // router.replace({ pathname: '/drone-owner/(tabs)/dhome', params: { userId: user._id.toString() } });
+        router.replace({ pathname: '/drone-owner/(tabs)/dhome'});
+      } else if (role === 'Pilot') {
+        // router.replace({ pathname: '/Pilot/pilotHome', params: { userId: user._id.toString() } });
+        router.replace({ pathname: '/Pilot/pilotHome'});
       } else {
         setError('Invalid role');
       }
     } catch (err: any) {
-      console.error('Login error:', err); // Log the full error
-      console.error('Error response:', err.response?.data); // Log the server response (if any)
-      setError(err.response?.data?.detail || 'Invalid email or password. Please try again.');
+      console.error('Login error:', err);
+      console.error('Error response:', err.response?.data);
+      setError(err.response?.data?.message || 'Invalid email or password. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -60,10 +73,7 @@ export default function LoginScreen() {
 
   return (
     <View style={styles.container}>
-      <Image
-        source={require('./../../assets/images/MainLogo.png')}
-        style={styles.logo}
-      />
+      <Image source={require('./../../assets/images/MainLogo.png')} style={styles.logo} />
       <View style={styles.formContainer}>
         <Text style={styles.title}>Login</Text>
         <TextInput
@@ -93,11 +103,7 @@ export default function LoginScreen() {
           onPress={handleLogin}
           disabled={loading}
         >
-          {loading ? (
-            <ActivityIndicator color="#FFF" />
-          ) : (
-            <Text style={styles.buttonText}>Login</Text>
-          )}
+          {loading ? <ActivityIndicator color="#FFF" /> : <Text style={styles.buttonText}>Login</Text>}
         </TouchableOpacity>
         <TouchableOpacity onPress={() => router.replace('/(auth)/register')}>
           <Text style={styles.link}>Don't have an account? Register</Text>

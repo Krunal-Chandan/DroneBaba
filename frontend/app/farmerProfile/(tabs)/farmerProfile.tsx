@@ -10,8 +10,9 @@ import {
   ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import { FarmerDB } from '@/components/database/FarmerDB';
+import { useRouter } from 'expo-router';
 
 type MaterialCommunityIconName =
   | 'account'
@@ -34,6 +35,7 @@ type MaterialCommunityIconName =
 
 export default function FarmerDetailsScreen({ route, navigation }: { route: any; navigation: any }) {
   const { createFarmer, updateFarmer } = FarmerDB();
+  const router = useRouter();
 
   const [farmerData, setFarmerData] = useState({
     name: 'John Doe',
@@ -63,42 +65,6 @@ export default function FarmerDetailsScreen({ route, navigation }: { route: any;
     Alert.alert('Image Picker', 'Image picking functionality would be implemented here.');
   };
 
-  // const handleSave = async () => {
-  //   const farmer = {
-  //     name: farmerData.name,
-  //     address: farmerData.address,
-  //     location: farmerData.location,
-  //     taluka: farmerData.taluka,
-  //     city: farmerData.city,
-  //     state: farmerData.state,
-  //     country: farmerData.country,
-  //     contactNo: farmerData.contactNo,
-  //     whatsAppNo: farmerData.whatsAppNo,
-  //     aadharCardNo: farmerData.aadharCardNo,
-  //     panCardNo: farmerData.panCardNo,
-  //     emailId: farmerData.email,
-  //     cropName: '', // Will be updated in CropInfoScreen
-  //     farmArea: '',
-  //     cropType: '',
-  //     season: '',
-  //     previousCropName: '',
-  //   };
-
-  //   try {
-  //     const farmerId = route?.params?.farmerId;
-  //     if (farmerId) {
-  //       await updateFarmer(farmerId, farmer);
-  //       Alert.alert('Success', 'Farmer details updated successfully!');
-  //     } else {
-  //       const newFarmerId = await createFarmer(farmer);
-  //       Alert.alert('Success', `Farmer details saved successfully! ID: ${newFarmerId}`);
-  //       navigation.navigate('CropInfo', { farmerId: newFarmerId, farmerName: farmer.name });
-  //     }
-  //   } catch (err) {
-  //     Alert.alert('Error', 'Failed to save farmer details.');
-  //   }
-  // };
-
   const handleSave = async () => {
     const farmer = {
       name: farmerData.name,
@@ -119,7 +85,7 @@ export default function FarmerDetailsScreen({ route, navigation }: { route: any;
       season: '',
       previousCropName: '',
     };
-  
+
     try {
       console.log('Saving farmer data:', farmer);
       const farmerId = route?.params?.farmerId;
@@ -144,7 +110,7 @@ export default function FarmerDetailsScreen({ route, navigation }: { route: any;
     }
   };
 
-  
+
   const renderField = (
     label: string,
     field: keyof typeof farmerData,
@@ -191,6 +157,11 @@ export default function FarmerDetailsScreen({ route, navigation }: { route: any;
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
+        <View>
+          <TouchableOpacity onPress={()=>router.back()} >
+            <MaterialIcons name="arrow-back" size={26} color="#000" />
+          </TouchableOpacity>
+        </View>
         <Text style={styles.headerTitle}>Farmer Details</Text>
       </View>
       <ScrollView contentContainerStyle={styles.content}>
@@ -235,16 +206,18 @@ const styles = StyleSheet.create({
     backgroundColor: '#F5F5F5',
   },
   header: {
-    padding: 20,
-    backgroundColor: '#FFF',
+    padding: 5,
+    backgroundColor: '#fff',
     borderBottomWidth: 1,
     borderBottomColor: '#E0E0E0',
     alignItems: 'center',
+    flexDirection: 'row',
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: 25,
     fontWeight: 'bold',
     color: '#333',
+    marginLeft: 15,
   },
   content: {
     padding: 20,
