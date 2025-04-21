@@ -77,7 +77,6 @@ export const getUserLocationDetails = async (req: Request, res: Response) => {
       user,
       //@ts-ignore
       userDet: user.userId.populate(),
-      // userDet: user.toJSON(),
     });
     return;
   } catch (error) {

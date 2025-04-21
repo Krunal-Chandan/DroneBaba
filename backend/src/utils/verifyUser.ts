@@ -23,7 +23,6 @@ export const verifyUser = (req: Request, res: Response, next: NextFunction) => {
     req.user = decoded.userId;
     next();
   } catch (error) {
-    console.log(error)
     res.status(500).json({
       message: "Internal Server Error from verifyUser",
     });
