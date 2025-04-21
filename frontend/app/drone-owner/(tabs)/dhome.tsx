@@ -30,7 +30,7 @@ export default function DHome() {
           <TouchableOpacity onPress={() => alert('Notifications clicked')} style={{ marginRight: 20 }}>
             <MaterialIcons name="notifications" size={24} color="#fff" />
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => router.push('/drone-owner/editProfile')}>
+          <TouchableOpacity onPress={() => router.push('/drone-owner-Profile/drone-owner-Profile')}>
             <MaterialIcons name="account-circle" size={24} color="#fff" />
           </TouchableOpacity>
         </View>

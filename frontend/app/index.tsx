@@ -9,7 +9,7 @@ export default function Index() {
 
   useEffect(() => {
     setTimeout(() => {
-      nav.replace("/trialpage")
+      nav.replace("/(auth)/login")
     }, 2000)
   }, [])
   return (

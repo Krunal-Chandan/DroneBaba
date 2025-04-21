@@ -35,7 +35,7 @@ export default function FarmerDashboard() {
   useEffect(() => {
     const currentDate = new Date();
     const minDate = new Date(currentDate);
-    minDate.setDate(currentDate.getDate() + 3);
+    minDate.setDate(currentDate.getDate() + 1);
     const formattedDate = minDate.toISOString().split('T')[0];
     setSelectedDate(formattedDate);
   }, []);
@@ -113,12 +113,12 @@ export default function FarmerDashboard() {
   return (
     <SafeAreaView style={styles.container}>
       {/* User Info Section */}
-      <View style={styles.userInfo}>
+      {/* <View style={styles.userInfo}>
         <Text style={styles.userName}>Welcome, {user?.name || 'Guest'}</Text>
         <Text style={styles.userDetails}>Email: {user?.email || 'N/A'}</Text>
         <Text style={styles.userDetails}>City: {user?.city || 'N/A'}</Text>
         <Text style={styles.userDetails}>Role: {user?.role || 'N/A'}</Text>
-      </View>
+      </View> */}
 
       {/* Header */}
       <View style={styles.header}>

@@ -1,269 +1,226 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  Image,
-  Alert,
   ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  Image,
+  TextInput,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
-import { FarmerDB } from '@/components/database/FarmerDB';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { api } from '@/api/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-type MaterialCommunityIconName =
-  | 'account'
-  | 'account-outline'
-  | 'email'
-  | 'lock'
-  | 'home'
-  | 'map-marker'
-  | 'map'
-  | 'city'
-  | 'earth'
-  | 'flag'
-  | 'phone'
-  | 'whatsapp'
-  | 'card-account-details'
-  | 'card-account-details-outline'
-  | 'camera'
-  | 'check'
-  | 'pencil';
-
-export default function FarmerDetailsScreen({ route, navigation }: { route: any; navigation: any }) {
-  const { createFarmer, updateFarmer } = FarmerDB();
+export default function FarmerProfileScreen() {
+  const [profileData, setProfileData] = useState({
+    _id: '',
+    name: '',
+    email: '',
+    password: '',
+    role: 'Farmer',
+    city: '',
+    address: '',
+    taluka: '',
+    pinCode: '',
+    state: '',
+    whatsapp_number: '',
+    pan_number: '',
+    aadhar_number: '',
+    contact_number: '',
+  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [editing, setEditing] = useState(false);
   const router = useRouter();
 
-  const [farmerData, setFarmerData] = useState({
-    name: 'John Doe',
-    username: '',
-    email: 'john.doe@example.com',
-    password: 'password123',
-    address: '',
-    location: '',
-    taluka: '',
-    city: 'Nagpur',
-    state: '',
-    country: '',
-    contactNo: '',
-    whatsAppNo: '',
-    aadharCardNo: '',
-    panCardNo: '',
-  });
+  // useEffect(() => {
+  //   const fetchData = async () => {
+  //     try {
+  //       const user = await api.getUser();
+  //       const location = await api.getUserLocationDetails();
+  //       setProfileData({ ...user, ...location });
+  //       await AsyncStorage.setItem('currentUser', JSON.stringify({ ...user, id: user._id.toString() }));
+  //     } catch (err: any) {
+  //       setError('Failed to fetch profile data.');
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
+  //   fetchData();
+  // }, []);
 
-  const [editingField, setEditingField] = useState<string | null>(null);
-  const [image, setImage] = useState<string | null>(null);
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        console.log("Fetching profile data...");
+        const user = await api.getUser();
+        console.log("User:", user);
+  
+        const location = await api.getUserLocationDetails();
+        console.log("Location:", location);
+  
+        const combinedData = { ...user, ...location };
+        setProfileData(combinedData);
+  
+        await AsyncStorage.setItem('currentUser', JSON.stringify({ ...user, id: user._id.toString() }));
+      } catch (err: any) {
+        console.log('Error in fetchData:', err);
+        setError('Failed to fetch profile data.');
+      } finally {
+        setLoading(false);
+      }
+    };
+  
+    fetchData();
+  }, []);
+  
 
-  const handleChange = (field: keyof typeof farmerData, value: string) => {
-    setFarmerData(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handleImagePick = () => {
-    Alert.alert('Image Picker', 'Image picking functionality would be implemented here.');
+  const handleChange = (field: keyof typeof profileData, value: string) => {
+    setProfileData((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleSave = async () => {
-    const farmer = {
-      name: farmerData.name,
-      address: farmerData.address,
-      location: farmerData.location,
-      taluka: farmerData.taluka,
-      city: farmerData.city,
-      state: farmerData.state,
-      country: farmerData.country,
-      contactNo: farmerData.contactNo,
-      whatsAppNo: farmerData.whatsAppNo,
-      aadharCardNo: farmerData.aadharCardNo,
-      panCardNo: farmerData.panCardNo,
-      emailId: farmerData.email,
-      cropName: '', // Will be updated in CropInfoScreen
-      farmArea: '',
-      cropType: '',
-      season: '',
-      previousCropName: '',
-    };
-
+    setLoading(true);
     try {
-      console.log('Saving farmer data:', farmer);
-      const farmerId = route?.params?.farmerId;
-      if (farmerId) {
-        console.log('Updating farmer with ID:', farmerId);
-        await updateFarmer(farmerId, farmer);
-        console.log('Farmer updated successfully');
-        Alert.alert('Success', 'Farmer details updated successfully!', [
-          { text: 'OK', onPress: () => navigation.navigate('FarmerList') },
-        ]);
-      } else {
-        console.log('Creating new farmer');
-        const newFarmerId = await createFarmer(farmer);
-        console.log('Farmer created with ID:', newFarmerId);
-        Alert.alert('Success', `Farmer details saved successfully! ID: ${newFarmerId}`, [
-          { text: 'OK', onPress: () => navigation.navigate('CropInfo', { farmerId: newFarmerId, farmerName: farmer.name }) },
-        ]);
-      }
-    } catch (err) {
-      console.error('Error saving farmer:', err);
-      Alert.alert('Error', 'Failed to save farmer details.');
+      const { name, email, password, city } = profileData;
+      await api.updateUser({ name, email, password, city });
+
+      const locationDetails = {
+        address: profileData.address,
+        taluka: profileData.taluka,
+        pinCode: profileData.pinCode,
+        state: profileData.state,
+        whatsapp_number: profileData.whatsapp_number,
+        pan_number: profileData.pan_number,
+        aadhar_number: profileData.aadhar_number,
+        contact_number: profileData.contact_number,
+      };
+      await api.saveLocationDetails(locationDetails);
+
+      setEditing(false);
+      Alert.alert('Success', 'Profile saved successfully!');
+    } catch (err: any) {
+      setError(err.message || 'Failed to save profile.');
+    } finally {
+      setLoading(false);
     }
   };
 
-
-  const renderField = (
-    label: string,
-    field: keyof typeof farmerData,
-    icon: MaterialCommunityIconName,
-    keyboardType: 'default' | 'email-address' | 'phone-pad' | 'numeric' | 'visible-password' = 'default',
-    secureTextEntry = false
-  ) => {
-    const isEditing = editingField === field;
-    return (
-      <View style={styles.fieldContainer}>
-        <Text style={styles.fieldLabel}>{label}</Text>
-        <View style={styles.fieldRow}>
-          <MaterialCommunityIcons name={icon} size={20} color="#2ECC71" style={styles.fieldIcon} />
-          {isEditing ? (
-            <TextInput
-              style={styles.input}
-              value={farmerData[field]}
-              onChangeText={text => handleChange(field, text)}
-              placeholder={`Enter ${label.toLowerCase()}`}
-              keyboardType={keyboardType}
-              secureTextEntry={secureTextEntry}
-              autoFocus
-            />
-          ) : (
-            <Text style={styles.fieldValue}>
-              {farmerData[field] || `No ${label.toLowerCase()} provided`}
-            </Text>
-          )}
-          <TouchableOpacity
-            onPress={() => setEditingField(isEditing ? null : field)}
-            style={styles.editButton}
-          >
-            <MaterialCommunityIcons
-              name={isEditing ? 'check' : 'pencil'}
-              size={20}
-              color="#2ECC71"
-            />
-          </TouchableOpacity>
-        </View>
+  const renderField = (label: string, field: keyof typeof profileData, icon: string, editable = false) => (
+    <View style={styles.fieldContainer}>
+      <Text style={styles.fieldLabel}>{label}</Text>
+      <View style={styles.fieldRow}>
+        <MaterialCommunityIcons name={icon as any} size={20} color="#2ECC71" style={styles.fieldIcon} />
+        {editing || !editable ? (
+          <TextInput
+            style={styles.input}
+            value={profileData[field] || ''}
+            onChangeText={(text) => handleChange(field, text)}
+            editable={editing}
+          />
+        ) : (
+          <Text style={styles.fieldValue}>{profileData[field] || 'N/A'}</Text>
+        )}
       </View>
-    );
-  };
+    </View>
+  );
+
+  if (loading) return <Text style={styles.loadingText}>Loading...</Text>;
+  if (error) return <Text style={styles.errorText}>{error}</Text>;
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <View>
-          <TouchableOpacity onPress={()=>router.back()} >
-            <MaterialIcons name="arrow-back" size={26} color="#000" />
-          </TouchableOpacity>
-        </View>
-        <Text style={styles.headerTitle}>Farmer Details</Text>
+        <Text style={styles.headerTitle}>Farmer Profile</Text>
+        <TouchableOpacity style={styles.logoutButton} onPress={async () => { await api.logout(); router.replace('/(auth)/login'); }}>
+          <MaterialCommunityIcons name="logout" size={24} color="#dc3545" />
+        </TouchableOpacity>
       </View>
       <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.imageContainer}>
-          <Image
-            source={image ? { uri: image } : require('./../../../assets/images/Azmuth.png')}
-            style={styles.profileImage}
-          />
-          <TouchableOpacity style={styles.uploadButton} onPress={handleImagePick}>
-            <MaterialCommunityIcons name="camera" size={20} color="#FFF" style={styles.uploadIcon} />
-            <Text style={styles.uploadButtonText}>Upload Image</Text>
+        {/* First Half: Personal Details */}
+        <View style={styles.profileCard}>
+          <View style={styles.imageContainer}>
+            <Image
+              source={require('./../../../assets/images/Azmuth.png')}
+              style={styles.profileImage}
+            />
+            <TouchableOpacity style={styles.uploadButton} onPress={() => Alert.alert('Image Picker')}>
+              <MaterialCommunityIcons name="camera" size={20} color="#FFF" />
+              <Text style={styles.uploadButtonText}>Upload Image</Text>
+            </TouchableOpacity>
+          </View>
+          {renderField('Name', 'name', 'account', true)}
+          {renderField('Email', 'email', 'email', true)}
+          {renderField('Password', 'password', 'lock', true)}
+          {renderField('Role', 'role', 'account-group', false)}
+          {renderField('City', 'city', 'city', true)}
+          <TouchableOpacity style={styles.saveButton} onPress={() => setEditing(!editing)}>
+            <Text style={styles.saveButtonText}>{editing ? 'Cancel' : 'Edit'}</Text>
           </TouchableOpacity>
+          {editing && (
+            <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+              <Text style={styles.saveButtonText}>Save</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
-        <Text style={styles.sectionTitle}>Personal Information</Text>
-        {renderField('Name', 'name', 'account')}
-        {renderField('Username', 'username', 'account-outline')}
-        {renderField('Email', 'email', 'email', 'email-address')}
-        {renderField('Password', 'password', 'lock', 'default', true)}
-        {renderField('Address', 'address', 'home')}
-        {renderField('Location', 'location', 'map-marker')}
-        {renderField('Taluka', 'taluka', 'map')}
-        {renderField('City', 'city', 'city')}
-        {renderField('State', 'state', 'earth')}
-        {renderField('Country', 'country', 'flag')}
-        {renderField('Contact No', 'contactNo', 'phone', 'phone-pad')}
-        {renderField('WhatsApp No', 'whatsAppNo', 'whatsapp', 'phone-pad')}
-        {renderField('Aadhar Card No', 'aadharCardNo', 'card-account-details', 'numeric')}
-        {renderField('PAN Card No', 'panCardNo', 'card-account-details-outline')}
-
-        <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-          <Text style={styles.saveButtonText}>Save Details</Text>
-        </TouchableOpacity>
+        {/* Second Half: Location Details */}
+        <Text style={styles.sectionTitle}>Additional Details</Text>
+        {renderField('Address', 'address', 'home', true)}
+        {renderField('Taluka', 'taluka', 'map', true)}
+        {renderField('Pin Code', 'pinCode', 'map-marker', true)}
+        {renderField('State', 'state', 'earth', true)}
+        {renderField('WhatsApp No', 'whatsapp_number', 'whatsapp', true)}
+        {renderField('PAN No', 'pan_number', 'card-account-details', true)}
+        {renderField('Aadhar No', 'aadhar_number', 'card-account-details-outline', true)}
+        {renderField('Contact No', 'contact_number', 'phone', true)}
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F5F5F5',
-  },
+  container: { flex: 1, backgroundColor: '#F5F5F5' },
   header: {
-    padding: 5,
-    backgroundColor: '#fff',
+    padding: 20,
+    backgroundColor: '#FFF',
     borderBottomWidth: 1,
     borderBottomColor: '#E0E0E0',
-    alignItems: 'center',
     flexDirection: 'row',
-  },
-  headerTitle: {
-    fontSize: 25,
-    fontWeight: 'bold',
-    color: '#333',
-    marginLeft: 15,
-  },
-  content: {
-    padding: 20,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 15,
-  },
-  imageContainer: {
+    justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  headerTitle: { fontSize: 20, fontWeight: 'bold', color: '#333', textAlign: 'center' },
+  content: { padding: 20 },
+  profileCard: {
+    backgroundColor: '#FFF',
+    borderRadius: 12,
+    padding: 20,
     marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  profileImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: '#E0E0E0',
-  },
+  imageContainer: { alignItems: 'center', marginBottom: 20 },
+  profileImage: { width: 100, height: 100, borderRadius: 50, backgroundColor: '#E0E0E0' },
   uploadButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 10,
     backgroundColor: '#2ECC71',
     paddingVertical: 8,
     paddingHorizontal: 15,
     borderRadius: 8,
+    marginTop: 10,
   },
-  uploadIcon: {
-    marginRight: 5,
-  },
-  uploadButtonText: {
-    color: '#FFF',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  fieldContainer: {
-    marginBottom: 15,
-  },
-  fieldLabel: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 5,
-  },
+  uploadButtonText: { color: '#FFF', fontSize: 14, fontWeight: 'bold', marginLeft: 5 },
+  fieldContainer: { marginBottom: 15 },
+  fieldLabel: { fontSize: 14, fontWeight: 'bold', color: '#333', marginBottom: 5 },
   fieldRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -273,33 +230,21 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E0E0E0',
   },
-  fieldIcon: {
-    marginRight: 10,
-  },
-  fieldValue: {
-    flex: 1,
-    fontSize: 16,
-    color: '#333',
-  },
-  input: {
-    flex: 1,
-    fontSize: 16,
-    color: '#333',
-    padding: 0,
-  },
-  editButton: {
-    padding: 5,
-  },
+  fieldIcon: { marginRight: 10 },
+  fieldValue: { flex: 1, fontSize: 16, color: '#333' },
+  input: { flex: 1, fontSize: 16, color: '#333', padding: 0 },
   saveButton: {
     backgroundColor: '#2ECC71',
-    paddingVertical: 15,
+    paddingVertical: 12,
     borderRadius: 8,
     alignItems: 'center',
-    marginTop: 20,
+    marginTop: 10,
   },
-  saveButtonText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#FFF',
+  saveButtonText: { color: '#FFF', fontSize: 16, fontWeight: '500' },
+  sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#333', marginTop: 20, marginBottom: 15 },
+  logoutButton: {
+    padding: 5,
   },
+  loadingText: { textAlign: 'center', fontSize: 16, color: '#666', marginTop: 20 },
+  errorText: { textAlign: 'center', fontSize: 16, color: '#E74C3C', marginTop: 20 },
 });
