@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { DroneInfoModel, ScheduleModel } from "../models/models";
+import { DroneInfoModel } from "../models/models";
 
 export const createSchedule = async (req: Request, res: Response) => {
   const { date, timeSlot } = req.body;

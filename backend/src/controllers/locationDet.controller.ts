@@ -86,3 +86,66 @@ export const getUserLocationDetails = async (req: Request, res: Response) => {
     return;
   }
 };
+
+export const updateDetails = async (req: Request, res: Response) => {
+  //@ts-ignore
+  const userId = req.user;
+
+  const {
+    address,
+    taluka,
+    pinCode,
+    state,
+    whatsapp_number,
+    pan_number,
+    aadhar_number,
+    contact_number,
+  } = req.body;
+
+  if (
+    !address ||
+    !taluka ||
+    !pinCode ||
+    !state ||
+    !whatsapp_number ||
+    !pan_number ||
+    !aadhar_number ||
+    !contact_number
+  ) {
+    res.status(404).json({
+      message: "Please fill all the required fields",
+    });
+    return;
+  }
+
+  try {
+    const user = await OtherDetailModel.findOne({ userId });
+    if (!user) {
+      res.status(403).json({
+        message:
+          "You have not added details, you cannot update before adding details",
+      });
+      return;
+    }
+    user.address = address;
+    user.taluka = taluka;
+    user.pinCode = pinCode;
+    user.state = state;
+    user.whatsapp_number = whatsapp_number;
+    user.aadhar_number = aadhar_number;
+    user.contact_number = contact_number;
+    user.pan_number = pan_number;
+    await user.save();
+
+    res.status(201).json({
+      message: "User updated successfully",
+      user,
+    });
+    return;
+  } catch (error) {
+    res.status(500).json({
+      message: "Internal Server Error",
+    });
+    return;
+  }
+};

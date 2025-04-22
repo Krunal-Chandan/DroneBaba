@@ -42,7 +42,7 @@ const locationAndOtherDetailSchema = new mongoose.Schema({
   aadhar_number: Number,
   pan_number: String,
   pinCode: Number,
-  State: String,
+  state: String,
 });
 
 export const OtherDetailModel = mongoose.model(
@@ -55,14 +55,24 @@ const cropSchema = new mongoose.Schema({
     type: mongoose.Types.ObjectId,
     ref: "User",
   },
-  crop_name: String,
-  farm_area: String,
-  crop_type: String,
+  name: String,
+  area: String,
+  type: String,
   season: String,
-  prev_crop_name: String,
+  prevCropName: String,
 });
 
 export const cropModel = mongoose.model("Crop", cropSchema);
+
+const farmerSchema = new mongoose.Schema({
+  userId: {
+    type: mongoose.Types.ObjectId,
+    ref: "User",
+  },
+  crops: [{ type: mongoose.Types.ObjectId, ref: "Crop" }],
+});
+
+export const farmerModel = mongoose.model("Farmer", farmerSchema);
 
 const licenseDetailSchema = new mongoose.Schema({
   userId: {
@@ -84,13 +94,6 @@ export const licenseDetailModel = mongoose.model(
   "LicenseDetail",
   licenseDetailSchema
 );
-
-const ScheduleSchema = new mongoose.Schema({
-  date: Date,
-  timeSlot: String,
-});
-
-export const ScheduleModel = mongoose.model("Schedule", ScheduleSchema);
 
 const droneInfoSchema = new mongoose.Schema({
   userId: {
