@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Linking, SafeAreaView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Linking, SafeAreaView, ActivityIndicator } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -23,25 +23,54 @@ export default function DHome() {
 
   const router = useRouter();
   const [locationDetailsExist, setLocationDetailsExist] = useState<boolean | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const checkLocationDetails = async () => {
+      setLoading(true);
+      setError(null);
       try {
-        const res = await api.getUserLocationDetails(); // Adjust this call to match your actual API
-        if (res && res.data) {
-          await AsyncStorage.setItem('locationDetails', JSON.stringify(res.data));
+        const res = await api.getUserLocationDetails(); // Returns { user: { ... } }
+        if (res && Object.keys(res).length > 0) {
+          await AsyncStorage.setItem('locationDetails', JSON.stringify(res));
           setLocationDetailsExist(true);
         } else {
           setLocationDetailsExist(false);
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error('Error fetching location details:', err);
+        setError(err.message || 'Failed to fetch location details.');
         setLocationDetailsExist(false);
+      } finally {
+        setLoading(false);
       }
     };
-  
+
     checkLocationDetails();
   }, []);
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <ActivityIndicator size="large" color="#2ECC71" style={styles.loading} />
+      </SafeAreaView>
+    );
+  }
+
+  if (error) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <Text style={styles.errorText}>{error}</Text>
+        <TouchableOpacity
+          style={styles.retryButton}
+          onPress={() => router.push('/locDetails')}
+        >
+          <Text style={styles.retryButtonText}>Retry or Update Profile</Text>
+        </TouchableOpacity>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -49,7 +78,7 @@ export default function DHome() {
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Dashboard</Text>
         <View style={styles.headerButton}>
-          <TouchableOpacity style={{ marginRight: 20 }}>
+          <TouchableOpacity style={{ marginRight: 20 }} onPress={() => alert('Notifications clicked')}>
             <MaterialIcons name="notifications" size={24} color="#fff" />
           </TouchableOpacity>
           <TouchableOpacity onPress={() => router.push('/drone-owner-Profile/drone-owner-Profile')}>
@@ -58,7 +87,7 @@ export default function DHome() {
         </View>
       </View>
 
-      {/* Loading the update profile */}
+      {/* Profile Prompt */}
       {locationDetailsExist === false && (
         <TouchableOpacity
           style={styles.profilePrompt}
@@ -93,7 +122,7 @@ export default function DHome() {
       </ScrollView>
 
       {/* FAB for Adding Drone */}
-      <TouchableOpacity style={styles.fab} onPress={() => router.push('/drone-owner/addDrone')}>
+      <TouchableOpacity style={styles.fab} onPress={() => router.push('./drone-owner/adddrone')}>
         <Text style={styles.fabText}>+</Text>
       </TouchableOpacity>
     </SafeAreaView>
@@ -108,7 +137,7 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'flex-start',
+    justifyContent: 'space-between',
     alignItems: 'center',
     backgroundColor: '#007bff',
     padding: 15,
@@ -121,9 +150,7 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
   headerButton: {
-    flex: 1,
     flexDirection: 'row',
-    justifyContent: 'flex-end',
     alignItems: 'center',
   },
   title: {
@@ -219,5 +246,28 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '500',
     textAlign: 'center',
+  },
+  loading: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  errorText: {
+    textAlign: 'center',
+    color: '#E74C3C',
+    fontSize: 16,
+    marginTop: 20,
+  },
+  retryButton: {
+    backgroundColor: '#28a745',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 6,
+    alignSelf: 'center',
+    marginTop: 20,
+  },
+  retryButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '500',
   },
 });
