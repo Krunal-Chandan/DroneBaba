@@ -43,7 +43,7 @@ const api = {
         console.log(token);
         if (!token) throw new Error('No token found. Please log in.');
         const response = await axios.get(`${API_URL}/api/v1/user/getUser`, {
-          headers: { "Authorization": `${token}` }, // Fixed header to match verifyUser
+          headers: { "Authorization": token }, // Fixed header to match verifyUser
         });
         return response.data.user; // Expecting user object without password
       } catch (error: any) {
@@ -59,7 +59,7 @@ const api = {
     try {
       const token = await AsyncStorage.getItem('access_token');
       if (token) {
-        await axios.post(`${API_URL}/api/v1/user/logout`, {}, { headers: { Authorization: `${token}` } });
+        await axios.post(`${API_URL}/api/v1/user/logout`, {}, { headers: { Authorization: token } });
         await AsyncStorage.removeItem('access_token');
         await AsyncStorage.removeItem('currentUser'); // Clear user data
       }
@@ -74,7 +74,7 @@ const api = {
       const token = await AsyncStorage.getItem('access_token');
       if (!token) throw new Error('No token found. Please log in.');
       const response = await axios.put(`${API_URL}/api/v1/user/update`, userData, {
-        headers: { Authorization: `${token}` },
+        headers: { Authorization: token },
       });
       return response.data.user;
     } catch (error: any) {
@@ -87,7 +87,7 @@ const api = {
       const token = await AsyncStorage.getItem('access_token');
       if (!token) throw new Error('No token found. Please log in.');
       const response = await axios.get(`${API_URL}/api/v1/locationdets/getDetails`, {
-        headers: { Authorization: `${token}` },
+        headers: { Authorization: token },
       });
       return response.data.user; // { address, taluka, pinCode, state, whatsapp_number, pan_number, aadhar_number, contact_number }
     } catch (error: any) {
@@ -109,11 +109,73 @@ const api = {
       const token = await AsyncStorage.getItem('access_token');
       if (!token) throw new Error('No token found. Please log in.');
       const response = await axios.post(`${API_URL}/api/v1/locationdets/fillDetails`, details, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `${token}` },
       });
       return response.data;
     } catch (error: any) {
       throw new Error(error.response?.data?.message || 'Failed to save location details.');
+    }
+  },
+  addDrone: async (droneData: {
+    name: string;
+    type: string;
+    capacity: string;
+    pricePerAcre: string;
+    durability: string;
+    purchasedDate: string;
+    isNGO: boolean;
+    ngoName?: string;
+  }) => {
+    try {
+      const token = await AsyncStorage.getItem('access_token');
+      if (!token) throw new Error('No token found. Please log in.');
+      const response = await axios.post(`${API_URL}/api/v1/drone/add`, droneData, {
+        headers: { Authorization: token }, 
+      });
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || 'Failed to add drone.');
+    }
+  },
+
+  getDroneDetails: async (droneId: string) => {
+    try {
+      const token = await AsyncStorage.getItem('access_token');
+      if (!token) throw new Error('No token found. Please log in.');
+      const response = await axios.get(`${API_URL}/api/v1/drone/details/${droneId}`, {
+        headers: { Authorization: token },
+      });
+      return response.data.droneDetail;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || 'Failed to fetch drone details.');
+    }
+  },
+
+  getSchedulesOfDroneOwner: async () => {
+    try {
+      const token = await AsyncStorage.getItem('access_token');
+      if (!token) throw new Error('No token found. Please log in.');
+      const response = await axios.get(`${API_URL}/api/v1/drone/schedules`, {
+        headers: { Authorization: token },
+      });
+      return response.data.Schedules;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || 'Failed to fetch schedules.');
+    }
+  },
+
+  deleteSchedule: async (droneId: string, date: string, timeSlot: string) => {
+    try {
+      const token = await AsyncStorage.getItem('access_token');
+      if (!token) throw new Error('No token found. Please log in.');
+      const response = await axios.post(
+        `${API_URL}/api/v1/drone/schedule/delete/${droneId}`,
+        { date, timeSlot },
+        { headers: { Authorization: token } }
+      );
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || 'Failed to delete schedule.');
     }
   },
 };

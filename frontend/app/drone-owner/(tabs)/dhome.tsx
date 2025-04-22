@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Linking, SafeAreaView } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { api } from '@/api/api';
 
 export default function DHome() {
   const workItems = [
@@ -20,6 +22,26 @@ export default function DHome() {
   ];
 
   const router = useRouter();
+  const [locationDetailsExist, setLocationDetailsExist] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const checkLocationDetails = async () => {
+      try {
+        const res = await api.getUserLocationDetails(); // Adjust this call to match your actual API
+        if (res && res.data) {
+          await AsyncStorage.setItem('locationDetails', JSON.stringify(res.data));
+          setLocationDetailsExist(true);
+        } else {
+          setLocationDetailsExist(false);
+        }
+      } catch (err) {
+        console.error('Error fetching location details:', err);
+        setLocationDetailsExist(false);
+      }
+    };
+  
+    checkLocationDetails();
+  }, []);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -27,7 +49,7 @@ export default function DHome() {
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Dashboard</Text>
         <View style={styles.headerButton}>
-          <TouchableOpacity onPress={() => alert('Notifications clicked')} style={{ marginRight: 20 }}>
+          <TouchableOpacity style={{ marginRight: 20 }}>
             <MaterialIcons name="notifications" size={24} color="#fff" />
           </TouchableOpacity>
           <TouchableOpacity onPress={() => router.push('/drone-owner-Profile/drone-owner-Profile')}>
@@ -35,6 +57,16 @@ export default function DHome() {
           </TouchableOpacity>
         </View>
       </View>
+
+      {/* Loading the update profile */}
+      {locationDetailsExist === false && (
+        <TouchableOpacity
+          style={styles.profilePrompt}
+          onPress={() => router.push('/locDetails')}
+        >
+          <Text style={styles.profilePromptText}>🚨 Please complete your profile to continue.</Text>
+        </TouchableOpacity>
+      )}
 
       {/* Title */}
       <Text style={styles.title}>Today's Work</Text>
@@ -173,5 +205,19 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 24,
     fontWeight: 'bold',
+  },
+  profilePrompt: {
+    backgroundColor: '#FFEFD5',
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#FFA07A',
+  },
+  profilePromptText: {
+    color: '#d35400',
+    fontSize: 15,
+    fontWeight: '500',
+    textAlign: 'center',
   },
 });

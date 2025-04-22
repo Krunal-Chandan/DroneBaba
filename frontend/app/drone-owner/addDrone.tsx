@@ -1,34 +1,48 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, SafeAreaView } from 'react-native';
 import { useRouter } from 'expo-router';
+import { api } from '@/api/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function AddDrone() {
   const [droneName, setDroneName] = useState('');
   const [droneType, setDroneType] = useState('');
   const [capacity, setCapacity] = useState('');
-  const [batteryDurability, setBatteryDurability] = useState('');
+  const [pricePerAcre, setPricePerAcre] = useState('');
+  const [durability, setDurability] = useState('');
   const [purchaseDate, setPurchaseDate] = useState('');
-  const [isNGOSupported, setIsNGOSupported] = useState<boolean | null>(null); // For radio buttons
+  const [isNGOSupported, setIsNGOSupported] = useState<boolean | null>(null);
+  const [ngoName, setNgoName] = useState('');
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const handleAddDrone = () => {
-    if (!droneName || !droneType || !capacity || !batteryDurability || !purchaseDate || isNGOSupported === null) {
-      Alert.alert('Error', 'All fields are required!');
+  const handleAddDrone = async () => {
+    if (!droneName || !droneType || !capacity || !pricePerAcre || !durability || !purchaseDate || isNGOSupported === null) {
+      Alert.alert('Error', 'All fields except NGO Name (if not NGO) are required!');
       return;
     }
-    // Simulate adding drone (replace with API call later)
-    const droneData = {
-      droneName,
-      droneType,
-      capacity,
-      batteryDurability,
-      purchaseDate,
-      isNGOSupported,
-    };
-    Alert.alert('Success', `Drone "${droneName}" added successfully!`, [
-      { text: 'OK', onPress: () => router.back() },
-    ]);
-    console.log('Drone added:', droneData); // Log for debugging
+
+    setLoading(true);
+    try {
+      const droneData = {
+        name: droneName,
+        type: droneType,
+        capacity,
+        pricePerAcre,
+        durability,
+        purchasedDate: purchaseDate,
+        isNGO: isNGOSupported,
+        ngoName: isNGOSupported ? ngoName : undefined,
+      };
+      const response = await api.addDrone(droneData);
+      Alert.alert('Success', `Drone "${droneName}" added successfully! Drone ID: ${response.droneId}`, [
+        { text: 'OK', onPress: () => router.back() },
+      ]);
+    } catch (err: any) {
+      Alert.alert('Error', err.message || 'Failed to add drone.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -54,9 +68,15 @@ export default function AddDrone() {
       />
       <TextInput
         style={styles.input}
-        placeholder="Battery Durability (e.g., 30 min)"
-        value={batteryDurability}
-        onChangeText={setBatteryDurability}
+        placeholder="Price Per Acre (e.g., 50)"
+        value={pricePerAcre}
+        onChangeText={setPricePerAcre}
+      />
+      <TextInput
+        style={styles.input}
+        placeholder="Durability (e.g., 30 min)"
+        value={durability}
+        onChangeText={setDurability}
       />
       <TextInput
         style={styles.input}
@@ -85,8 +105,20 @@ export default function AddDrone() {
           <Text>No</Text>
         </TouchableOpacity>
       </View>
-      <TouchableOpacity style={styles.button} onPress={handleAddDrone}>
-        <Text style={styles.buttonText}>Add Drone</Text>
+      {isNGOSupported && (
+        <TextInput
+          style={styles.input}
+          placeholder="NGO Name"
+          value={ngoName}
+          onChangeText={setNgoName}
+        />
+      )}
+      <TouchableOpacity
+        style={[styles.button, loading && styles.disabledButton]}
+        onPress={handleAddDrone}
+        disabled={loading}
+      >
+        <Text style={styles.buttonText}>{loading ? 'Adding...' : 'Add Drone'}</Text>
       </TouchableOpacity>
       <TouchableOpacity style={styles.cancelButton} onPress={() => router.back()}>
         <Text style={styles.cancelButtonText}>Cancel</Text>
@@ -100,8 +132,8 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f0f4f8',
     padding: 20,
-},
-title: {
+  },
+  title: {
     fontSize: 24,
     fontWeight: '600',
     color: '#333',
@@ -157,6 +189,10 @@ title: {
     borderRadius: 8,
     alignItems: 'center',
     marginBottom: 10,
+  },
+  disabledButton: {
+    backgroundColor: '#95C2DE',
+    opacity: 0.7,
   },
   buttonText: {
     color: '#fff',
