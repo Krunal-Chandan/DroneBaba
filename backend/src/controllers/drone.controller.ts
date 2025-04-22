@@ -17,6 +17,21 @@ export const addDrone = async (req: Request, res: Response) => {
   const user = await userModel.findById(userId).select("role");
   const userRole = user?.role;
 
+  if (
+    !name ||
+    !type ||
+    !capacity ||
+    !pricePerAcre ||
+    !durability ||
+    !purchasedDate ||
+    !isNGO
+  ) {
+    res.status(404).json({
+      message: "Please fill all the required fields",
+    });
+    return;
+  }
+
   if (userRole !== "Drone Owner") {
     res.status(401).json({
       message: "Only drone owners are allowed to add drones",
@@ -75,6 +90,36 @@ export const getDroneDetails = async (req: Request, res: Response) => {
   } catch (error) {
     res.status(500).json({
       message: "Internal Server Error " + error,
+    });
+    return;
+  }
+};
+
+export const getAllDroneOfDroneOwner = async (req: Request, res: Response) => {
+  //@ts-ignore
+  const userId = req.user;
+  try {
+    const drones = await droneOwnerModel.findOne({ userId }).populate("drones");
+    if (!drones) {
+      res.status(404).json({
+        message: "No drone owner found",
+      });
+      return;
+    }
+
+    if (drones.drones.length === 0) {
+      res.status(404).json({
+        message: "No drones added, please add drones",
+      });
+    }
+
+    res.status(200).json({
+      drones: drones.drones,
+    });
+    return;
+  } catch (error) {
+    res.status(500).json({
+      message: "Internal Server Error",
     });
     return;
   }
@@ -148,5 +193,25 @@ export const deleteSchedule = async (req: Request, res: Response) => {
       message: "Internal Server Error" + error,
     });
     return;
+  }
+};
+
+export const getAllDrones = async (req: Request, res: Response) => {
+  //@ts-ignore
+  const userId = req.user;
+
+  try {
+    const drones = await DroneInfoModel.find().select(
+      "name type capacity durability"
+    );
+
+    res.status(200).json({
+      drones,
+    });
+    return;
+  } catch (error) {
+    res.status(500).json({
+      message: "Internal Server Error",
+    });
   }
 };

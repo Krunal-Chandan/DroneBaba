@@ -3,6 +3,8 @@ import { verifyUser } from "../utils/verifyUser";
 import {
   addDrone,
   deleteSchedule,
+  getAllDroneOfDroneOwner,
+  getAllDrones,
   getDroneDetails,
   getSchedulesOfDroneOwner,
 } from "../controllers/drone.controller";
@@ -17,5 +19,7 @@ router.get(
   getSchedulesOfDroneOwner
 );
 router.delete("/deleteSchedule/:droneId", verifyUser, deleteSchedule);
+router.get("/getAllDroneOfDroneOwner", verifyUser, getAllDroneOfDroneOwner);
+router.get("/getAllDrones", verifyUser, getAllDrones);
 
 export default router;

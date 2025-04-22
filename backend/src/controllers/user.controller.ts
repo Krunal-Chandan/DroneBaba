@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { droneOwnerModel, userModel } from "../models/models";
+import { droneOwnerModel, farmerModel, userModel } from "../models/models";
 import bcryptjs from "bcryptjs";
 import jwt from "jsonwebtoken";
 
@@ -42,6 +42,12 @@ export const registerUser = async (req: Request, res: Response) => {
 
     if (role === "Drone Owner") {
       await droneOwnerModel.create({
+        userId: newUser._id,
+      });
+    }
+
+    if (role === "Farmer") {
+      await farmerModel.create({
         userId: newUser._id,
       });
     }
@@ -141,4 +147,56 @@ export const logoutUser = async (req: Request, res: Response) => {
     message: "You are logged out",
   });
   return;
+};
+
+export const updateUser = async (req: Request, res: Response) => {
+  //@ts-ignore
+  const userId = req.user;
+  const { name, email, city } = req.body;
+
+  if (!name || !email || !city) {
+    res.status(400).json({
+      message: "Please fill all the required fields",
+    });
+    return;
+  }
+
+  try {
+    const user = await userModel.findById(userId);
+    if (!user) {
+      res.status(404).json({
+        message: "Please register yourself first",
+      });
+      return;
+    }
+
+    const existingEmail = await userModel.findOne({
+      email,
+      _id: { $ne: userId },
+    });
+    if (existingEmail) {
+      res.status(409).json({
+        message: "Email already in use by some another user",
+      });
+      return;
+    }
+
+    user.name = name;
+    if (user.email !== email) {
+      user.email = email;
+    }
+    user.city = city;
+    await user.save();
+
+    res.status(201).json({
+      message: "User updated successfully",
+      user,
+    });
+    return;
+  } catch (error) {
+    res.status(500).json({
+      message: "Internal Server Error" + error,
+    });
+    return;
+  }
 };
