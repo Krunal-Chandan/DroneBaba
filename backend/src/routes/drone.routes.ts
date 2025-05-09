@@ -6,6 +6,7 @@ import {
   getAllDroneOfDroneOwner,
   getAllDrones,
   getDroneDetails,
+  getScheduleOfDrone,
   getSchedulesOfDroneOwner,
 } from "../controllers/drone.controller";
 
@@ -21,5 +22,6 @@ router.get(
 router.delete("/deleteSchedule/:droneId", verifyUser, deleteSchedule);
 router.get("/getAllDroneOfDroneOwner", verifyUser, getAllDroneOfDroneOwner);
 router.get("/getAllDrones", verifyUser, getAllDrones);
+router.get("/getScheduleOfDrone", verifyUser, getScheduleOfDrone);
 
 export default router;

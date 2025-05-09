@@ -215,3 +215,26 @@ export const getAllDrones = async (req: Request, res: Response) => {
     });
   }
 };
+
+export const getScheduleOfDrone = async (req: Request, res: Response) => {
+  const droneId = req.params.droneId;
+  try {
+    const drone = await DroneInfoModel.findById(droneId);
+    const schedule = drone?.schedule;
+    if (schedule?.length === 0) {
+      res.status(404).json({
+        message: "No schedule for the drone exists",
+      });
+      return;
+    }
+    res.status(200).json({
+      schedule,
+    });
+    return;
+  } catch (error) {
+    res.status(500).json({
+      message: "Internal Server Error",
+    });
+    return;
+  }
+};
