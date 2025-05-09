@@ -1,5 +1,10 @@
 import { Request, Response } from "express";
-import { droneOwnerModel, farmerModel, userModel } from "../models/models";
+import {
+  droneOwnerModel,
+  farmerModel,
+  pilotModel,
+  userModel,
+} from "../models/models";
 import bcryptjs from "bcryptjs";
 import jwt from "jsonwebtoken";
 
@@ -48,6 +53,12 @@ export const registerUser = async (req: Request, res: Response) => {
 
     if (role === "Farmer") {
       await farmerModel.create({
+        userId: newUser._id,
+      });
+    }
+
+    if (role === "Pilot") {
+      await pilotModel.create({
         userId: newUser._id,
       });
     }

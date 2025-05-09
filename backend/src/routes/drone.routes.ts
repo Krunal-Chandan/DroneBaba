@@ -7,21 +7,17 @@ import {
   getAllDrones,
   getDroneDetails,
   getScheduleOfDrone,
-  getSchedulesOfDroneOwner,
+  getScheduleOfPilot,
 } from "../controllers/drone.controller";
 
 const router = express.Router();
 
 router.post("/addDrone", verifyUser, addDrone);
 router.get("/getDroneDetails/:droneId", verifyUser, getDroneDetails);
-router.get(
-  "/getAllSchedulesOfDroneOwner",
-  verifyUser,
-  getSchedulesOfDroneOwner
-);
 router.delete("/deleteSchedule/:droneId", verifyUser, deleteSchedule);
 router.get("/getAllDroneOfDroneOwner", verifyUser, getAllDroneOfDroneOwner);
 router.get("/getAllDrones", verifyUser, getAllDrones);
 router.get("/getScheduleOfDrone", verifyUser, getScheduleOfDrone);
+router.get("/getScheduleOfPilot", verifyUser, getScheduleOfPilot);
 
 export default router;

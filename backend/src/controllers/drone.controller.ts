@@ -1,5 +1,10 @@
 import { Request, Response } from "express";
-import { DroneInfoModel, droneOwnerModel, userModel } from "../models/models";
+import {
+  DroneInfoModel,
+  droneOwnerModel,
+  pilotModel,
+  userModel,
+} from "../models/models";
 
 export const addDrone = async (req: Request, res: Response) => {
   const {
@@ -125,28 +130,6 @@ export const getAllDroneOfDroneOwner = async (req: Request, res: Response) => {
   }
 };
 
-export const getSchedulesOfDroneOwner = async (req: Request, res: Response) => {
-  //@ts-ignore
-  const userId = req.user;
-
-  try {
-    const droneDets = await DroneInfoModel.find({ userId });
-    let Schedules = droneDets.map((drone) => ({
-      DroneName: drone.name,
-      DroneSchedule: drone.schedule,
-    }));
-
-    res.status(201).json({
-      Schedules,
-    });
-    return;
-  } catch (error) {
-    res.status(500).json({
-      message: "Internal Server Error",
-    });
-  }
-};
-
 export const deleteSchedule = async (req: Request, res: Response) => {
   const { date, timeSlot } = req.body;
   const droneId = req.params.droneId;
@@ -171,6 +154,17 @@ export const deleteSchedule = async (req: Request, res: Response) => {
       return s.date !== date && s.timeSlot !== timeSlot;
     });
 
+    const pilot = await pilotModel.findOne({ userId });
+    const pilotSchedule = pilot?.schedule;
+
+    const newPilotSchedule = pilotSchedule?.filter((s) => {
+      return s.date !== date && s.timeSlot !== timeSlot;
+    });
+
+    if (pilot?.schedule && newPilotSchedule) {
+      pilot.schedule = newPilotSchedule;
+    }
+
     if (schedule) {
       if (schedule.length === newSchedule?.length) {
         res.status(401).json({
@@ -183,11 +177,13 @@ export const deleteSchedule = async (req: Request, res: Response) => {
     if (newSchedule && droneInfo) {
       droneInfo.schedule = newSchedule;
     }
+
     await droneInfo?.save();
     res.status(201).json({
       message: "Schedule successfully deleted",
       droneInfo,
     });
+    return;
   } catch (error) {
     res.status(500).json({
       message: "Internal Server Error" + error,
@@ -229,6 +225,30 @@ export const getScheduleOfDrone = async (req: Request, res: Response) => {
     }
     res.status(200).json({
       schedule,
+    });
+    return;
+  } catch (error) {
+    res.status(500).json({
+      message: "Internal Server Error",
+    });
+    return;
+  }
+};
+
+export const getScheduleOfPilot = async (req: Request, res: Response) => {
+  //@ts-ignore
+  const userId = req.user;
+  const pilot = await pilotModel.findOne({ userId });
+  if (!pilot) {
+    res.status(404).json({
+      message: "User not found in Pilot Model",
+    });
+    return;
+  }
+
+  try {
+    res.status(200).json({
+      schedule: pilot.schedule,
     });
     return;
   } catch (error) {
