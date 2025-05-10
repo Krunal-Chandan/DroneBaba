@@ -13,8 +13,17 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
-// Initial farm data (replace with dynamic data in a real app)
-const initialFarmsData = [
+// Define the Farm type for better type safety
+type Farm = {
+  id: string;
+  name: string;
+  location: string;
+  area: string;
+  coordinates: { latitude: number; longitude: number } | null;
+};
+
+// Initial farm data (mocked for now, replace with API call in production)
+const initialFarmsData: Farm[] = [
   { id: 'F001', name: 'Sunset Acres', location: 'Nagpur', area: '5 acres', coordinates: null },
   { id: 'F002', name: 'Green Valley', location: 'Goa', area: '3 acres', coordinates: null },
   { id: 'F003', name: 'River Fields', location: 'Nagpur', area: '7 acres', coordinates: null },
@@ -23,7 +32,10 @@ const initialFarmsData = [
 
 export default function FarmSelectionScreen() {
   const router = useRouter();
-  const { droneId, date, time, coordinates: paramsCoordinates } = useLocalSearchParams();
+  // Call useLocalSearchParams once at the top level
+  const params = useLocalSearchParams();
+  const { droneId, selectedDate, slotTime, pricePerAcre, coordinates } = params;
+
   const [selectedFarms, setSelectedFarms] = useState<string[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [newFarmName, setNewFarmName] = useState('');
@@ -35,63 +47,52 @@ export default function FarmSelectionScreen() {
 
   // Handle coordinates returned from MapScreen
   useEffect(() => {
-    if (paramsCoordinates) {
-      console.log('Received paramsCoordinates:', paramsCoordinates);
-      // Check if paramsCoordinates is the string "undefined" or an empty value
-      const coordsToParse = Array.isArray(paramsCoordinates) ? paramsCoordinates[0] : paramsCoordinates;
-      if (!coordsToParse || coordsToParse === 'undefined') {
-        setNewCoordinates(null);
-        return;
-      }
-
-      try {
-        const parsedCoords = JSON.parse(coordsToParse) as { latitude: number; longitude: number };
-        // Validate latitude and longitude
-        if (
-          typeof parsedCoords.latitude === 'number' &&
-          typeof parsedCoords.longitude === 'number' &&
-          !isNaN(parsedCoords.latitude) &&
-          !isNaN(parsedCoords.longitude)
-        ) {
-          setNewCoordinates(parsedCoords);
-          // Set a demo farm name based on the current number of farms
-          setNewFarmName(`Farm ${farms.length + 1}`);
-          setModalVisible(true); // Show modal to name the farm
-        } else {
-          console.warn('Invalid coordinates format:', parsedCoords);
-          setNewCoordinates(null);
-          Alert.alert('Error', 'Invalid coordinates received. Please try again.');
-        }
-      } catch (error) {
-        console.error('Error parsing coordinates:', error);
-        setNewCoordinates(null);
-        Alert.alert('Error', 'Failed to parse coordinates. Please try again.');
-      }
-    } else {
+    if (!coordinates) {
       setNewCoordinates(null);
+      return;
     }
-  }, [paramsCoordinates, farms.length]);
+
+    // Handle array or string coordinates
+    const paramsCoordinates = Array.isArray(coordinates) ? coordinates[0] : coordinates;
+
+    if (paramsCoordinates === 'undefined' || !paramsCoordinates) {
+      setNewCoordinates(null);
+      return;
+    }
+
+    try {
+      const parsedCoords = JSON.parse(paramsCoordinates) as { latitude: number; longitude: number };
+      if (
+        typeof parsedCoords.latitude === 'number' &&
+        typeof parsedCoords.longitude === 'number' &&
+        !isNaN(parsedCoords.latitude) &&
+        !isNaN(parsedCoords.longitude)
+      ) {
+        setNewCoordinates(parsedCoords);
+        setNewFarmName(`Farm ${farms.length + 1}`);
+        setModalVisible(true);
+      } else {
+        console.warn('Invalid coordinates format:', parsedCoords);
+        setNewCoordinates(null);
+        Alert.alert('Error', 'Invalid coordinates received. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error parsing coordinates:', error);
+      setNewCoordinates(null);
+      Alert.alert('Error', 'Failed to parse coordinates. Please try again.');
+    }
+  }, [coordinates, farms.length]);
 
   // Toggle farm selection
   const toggleFarmSelection = (farmId: string) => {
-    if (selectedFarms.includes(farmId)) {
-      setSelectedFarms(selectedFarms.filter(id => id !== farmId));
-    } else {
-      setSelectedFarms([...selectedFarms, farmId]);
-    }
+    setSelectedFarms((prev) =>
+      prev.includes(farmId) ? prev.filter((id) => id !== farmId) : [...prev, farmId]
+    );
   };
 
   // Navigate to MapScreen to add a new farm
   const handleAddFarm = () => {
     router.push('/Farmer/map');
-  };
-
-  type Farm = {
-    id: string;
-    name: string;
-    location: string;
-    area: string;
-    coordinates: { latitude: number; longitude: number } | null;
   };
 
   // Add new farm to the list
@@ -111,7 +112,7 @@ export default function FarmSelectionScreen() {
       return;
     }
 
-    const newFarm = {
+    const newFarm: Farm = {
       id: `F${farms.length + 1}`.padStart(4, '0'),
       name: newFarmName.trim(),
       location: 'Custom Location',
@@ -119,15 +120,14 @@ export default function FarmSelectionScreen() {
       coordinates: newCoordinates,
     };
 
-    setFarms([...farms, newFarm]);
+    setFarms((prev) => [...prev, newFarm]);
     setModalVisible(false);
     setNewFarmName('');
     setNewCoordinates(null);
-    // Instead of setting coordinates to undefined, set it to an empty string
     router.setParams({ coordinates: '' });
   };
 
-  // Open edit modal
+  // Open edit modal for renaming a farm
   const handleEditFarmName = (farmId: string, currentName: string) => {
     setEditFarmId(farmId);
     setEditFarmName(currentName);
@@ -141,41 +141,51 @@ export default function FarmSelectionScreen() {
       return;
     }
 
-    setFarms(farms.map(farm =>
-      farm.id === editFarmId ? { ...farm, name: editFarmName.trim() } : farm
-    ));
+    setFarms((prev) =>
+      prev.map((farm) =>
+        farm.id === editFarmId ? { ...farm, name: editFarmName.trim() } : farm
+      )
+    );
     setEditModalVisible(false);
     setEditFarmId(null);
     setEditFarmName('');
   };
 
-  // Proceed to the next step (e.g., confirm booking)
+  // Proceed to pricing screen
   const handleProceed = () => {
     if (selectedFarms.length === 0) {
-      alert('Please select at least one farm to proceed.');
+      Alert.alert('Error', 'Please select at least one farm to proceed.');
       return;
     }
-    console.log('Selected Farms:', selectedFarms);
-    console.log('Drone Slot:', { droneId, date, time });
+
+    // Calculate total area of selected farms
+    const selectedFarmsData = farms.filter((farm) => selectedFarms.includes(farm.id));
+    const totalArea = selectedFarmsData.reduce((sum, farm) => {
+      const areaNumber = parseFloat(farm.area.replace(' acres', '')) || 0;
+      return sum + areaNumber;
+    }, 0);
+
+    // Get names of selected farms
+    const selectedFarmNames = selectedFarmsData.map((farm) => farm.name).join(', ');
+
     router.push({
       pathname: '/Farmer/pricing',
-      params: { farmerId: '1', droneId: 'D001', selectedDate: '2025-03-26', slotTime: '08:00 AM' },
-      // params: {
-      //   droneId,
-      //   date,
-      //   time,
-      //   selectedFarms: JSON.stringify(selectedFarms),
-      // },
+      params: {
+        droneId,
+        selectedDate,
+        slotTime,
+        pricePerAcre,
+        farmArea: totalArea.toString(),
+        farmName: selectedFarmNames,
+        selectedFarms: JSON.stringify(selectedFarms),
+      },
     });
   };
 
-  // Render each farm item
+  // Render each farm item in the list
   const renderFarmItem = ({ item }: { item: Farm }) => (
     <TouchableOpacity
-      style={[
-        styles.farmItem,
-        selectedFarms.includes(item.id) && styles.selectedFarmItem,
-      ]}
+      style={[styles.farmItem, selectedFarms.includes(item.id) && styles.selectedFarmItem]}
       onPress={() => toggleFarmSelection(item.id)}
     >
       <View style={styles.farmInfo}>
@@ -192,10 +202,7 @@ export default function FarmSelectionScreen() {
           <Ionicons name="pencil" size={20} color="#2ECC71" style={styles.editIcon} />
         </TouchableOpacity>
         <View
-          style={[
-            styles.checkbox,
-            selectedFarms.includes(item.id) && styles.selectedCheckbox,
-          ]}
+          style={[styles.checkbox, selectedFarms.includes(item.id) && styles.selectedCheckbox]}
         >
           {selectedFarms.includes(item.id) && (
             <Ionicons name="checkmark" size={16} color="#FFF" />
@@ -219,7 +226,7 @@ export default function FarmSelectionScreen() {
       {/* Selected Slot Info */}
       <View style={styles.slotInfo}>
         <Text style={styles.slotText}>
-          Selected Slot: {date} at {time}
+          Selected Slot: {selectedDate} at {slotTime}
         </Text>
       </View>
 
@@ -227,7 +234,7 @@ export default function FarmSelectionScreen() {
       <FlatList
         data={farms}
         renderItem={renderFarmItem}
-        keyExtractor={item => item.id}
+        keyExtractor={(item) => item.id}
         contentContainerStyle={styles.farmList}
         ListEmptyComponent={
           <Text style={styles.emptyText}>No farms available. Add a new farm to get started.</Text>
@@ -236,10 +243,7 @@ export default function FarmSelectionScreen() {
 
       {/* Proceed Button */}
       <TouchableOpacity
-        style={[
-          styles.proceedButton,
-          selectedFarms.length === 0 && styles.disabledButton,
-        ]}
+        style={[styles.proceedButton, selectedFarms.length === 0 && styles.disabledButton]}
         onPress={handleProceed}
         disabled={selectedFarms.length === 0}
       >
@@ -274,7 +278,8 @@ export default function FarmSelectionScreen() {
             !isNaN(newCoordinates.latitude) &&
             !isNaN(newCoordinates.longitude) ? (
               <Text style={styles.modalCoordinates}>
-                Coordinates: Lat {newCoordinates.latitude.toFixed(6)}, Lon {newCoordinates.longitude.toFixed(6)}
+                Coordinates: Lat {newCoordinates.latitude.toFixed(6)}, Lon{' '}
+                {newCoordinates.longitude.toFixed(6)}
               </Text>
             ) : (
               <Text style={styles.modalCoordinates}>No valid coordinates available</Text>

@@ -37,35 +37,18 @@ export default function FarmerProfileScreen() {
   const [editing, setEditing] = useState(false);
   const router = useRouter();
 
-  // useEffect(() => {
-  //   const fetchData = async () => {
-  //     try {
-  //       const user = await api.getUser();
-  //       const location = await api.getUserLocationDetails();
-  //       setProfileData({ ...user, ...location });
-  //       await AsyncStorage.setItem('currentUser', JSON.stringify({ ...user, id: user._id.toString() }));
-  //     } catch (err: any) {
-  //       setError('Failed to fetch profile data.');
-  //     } finally {
-  //       setLoading(false);
-  //     }
-  //   };
-  //   fetchData();
-  // }, []);
-
   useEffect(() => {
     const fetchData = async () => {
       try {
-        console.log("Fetching profile data...");
         const user = await api.getUser();
         console.log("User:", user);
-  
+
         const location = await api.getUserLocationDetails();
         console.log("Location:", location);
-  
+
         const combinedData = { ...user, ...location };
         setProfileData(combinedData);
-  
+
         await AsyncStorage.setItem('currentUser', JSON.stringify({ ...user, id: user._id.toString() }));
       } catch (err: any) {
         console.log('Error in fetchData:', err);
@@ -74,10 +57,9 @@ export default function FarmerProfileScreen() {
         setLoading(false);
       }
     };
-  
+
     fetchData();
   }, []);
-  
 
   const handleChange = (field: keyof typeof profileData, value: string) => {
     setProfileData((prev) => ({ ...prev, [field]: value }));
@@ -123,14 +105,11 @@ export default function FarmerProfileScreen() {
             editable={editing}
           />
         ) : (
-          <Text style={styles.fieldValue}>{profileData[field] || 'N/A'}</Text>
+          <Text style={styles.fieldValue}>{profileData[field] || ''}</Text>
         )}
       </View>
     </View>
   );
-
-  if (loading) return <Text style={styles.loadingText}>Loading...</Text>;
-  if (error) return <Text style={styles.errorText}>{error}</Text>;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -178,6 +157,11 @@ export default function FarmerProfileScreen() {
         {renderField('PAN No', 'pan_number', 'card-account-details', true)}
         {renderField('Aadhar No', 'aadhar_number', 'card-account-details-outline', true)}
         {renderField('Contact No', 'contact_number', 'phone', true)}
+        {!loading && !error && (
+          <TouchableOpacity style={styles.editDataButton} onPress={() => router.push('/locDetails')}>
+            <Text style={styles.editDataButtonText}>Edit Data</Text>
+          </TouchableOpacity>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -245,6 +229,12 @@ const styles = StyleSheet.create({
   logoutButton: {
     padding: 5,
   },
-  loadingText: { textAlign: 'center', fontSize: 16, color: '#666', marginTop: 20 },
-  errorText: { textAlign: 'center', fontSize: 16, color: '#E74C3C', marginTop: 20 },
+  editDataButton: {
+    backgroundColor: '#2ECC71',
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  editDataButtonText: { color: '#FFF', fontSize: 16, fontWeight: '500' },
 });

@@ -11,14 +11,22 @@ export default function AddDrone() {
   const [pricePerAcre, setPricePerAcre] = useState('');
   const [durability, setDurability] = useState('');
   const [purchaseDate, setPurchaseDate] = useState('');
-  const [isNGOSupported, setIsNGOSupported] = useState<boolean | null>(null);
+  const [isNGOSupported, setIsNGOSupported] = useState<'yes' | 'no' | null>(null); // Changed to string type
   const [ngoName, setNgoName] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
   const handleAddDrone = async () => {
+    // Validate all required fields
     if (!droneName || !droneType || !capacity || !pricePerAcre || !durability || !purchaseDate || isNGOSupported === null) {
       Alert.alert('Error', 'All fields except NGO Name (if not NGO) are required!');
+      return;
+    }
+
+    // Validate purchase date format (YYYY-MM-DD)
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dateRegex.test(purchaseDate)) {
+      Alert.alert('Error', 'Please enter a valid date in YYYY-MM-DD format (e.g., 2025-04-09)');
       return;
     }
 
@@ -31,9 +39,10 @@ export default function AddDrone() {
         pricePerAcre,
         durability,
         purchasedDate: purchaseDate,
-        isNGO: isNGOSupported,
-        ngoName: isNGOSupported ? ngoName : undefined,
+        isNGO: isNGOSupported, // Sending "yes" or "no" as string
+        ngoName: isNGOSupported === 'yes' ? ngoName : undefined,
       };
+      // @ts-ignore
       const response = await api.addDrone(droneData);
       Alert.alert('Success', `Drone "${droneName}" added successfully! Drone ID: ${response.droneId}`, [
         { text: 'OK', onPress: () => router.back() },
@@ -71,6 +80,7 @@ export default function AddDrone() {
         placeholder="Price Per Acre (e.g., 50)"
         value={pricePerAcre}
         onChangeText={setPricePerAcre}
+        keyboardType="numeric"
       />
       <TextInput
         style={styles.input}
@@ -88,24 +98,24 @@ export default function AddDrone() {
       <View style={styles.radioContainer}>
         <TouchableOpacity
           style={styles.radioButton}
-          onPress={() => setIsNGOSupported(true)}
+          onPress={() => setIsNGOSupported('yes')}
         >
-          <View style={[styles.radioCircle, isNGOSupported === true && styles.radioSelected]}>
-            {isNGOSupported === true && <View style={styles.radioInnerCircle} />}
+          <View style={[styles.radioCircle, isNGOSupported === 'yes' && styles.radioSelected]}>
+            {isNGOSupported === 'yes' && <View style={styles.radioInnerCircle} />}
           </View>
           <Text>Yes</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.radioButton}
-          onPress={() => setIsNGOSupported(false)}
+          onPress={() => setIsNGOSupported('no')}
         >
-          <View style={[styles.radioCircle, isNGOSupported === false && styles.radioSelected]}>
-            {isNGOSupported === false && <View style={styles.radioInnerCircle} />}
+          <View style={[styles.radioCircle, isNGOSupported === 'no' && styles.radioSelected]}>
+            {isNGOSupported === 'no' && <View style={styles.radioInnerCircle} />}
           </View>
           <Text>No</Text>
         </TouchableOpacity>
       </View>
-      {isNGOSupported && (
+      {isNGOSupported === 'yes' && (
         <TextInput
           style={styles.input}
           placeholder="NGO Name"

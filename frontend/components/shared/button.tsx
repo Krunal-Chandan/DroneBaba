@@ -22,8 +22,10 @@ export default function Button({ text, onPress, style }: ButtonProps) {
 }
 const styles = StyleSheet.create({
     button: {
-        backgroundColor: Colors.TEXT,
+        backgroundColor: Colors.BGCOLOR2,
         borderRadius: 17,
+        borderColor: Colors.BGCOLOR,
+        borderWidth: 2,
         justifyContent: 'center',
         alignItems: 'center',
         width: 300,
@@ -31,9 +33,9 @@ const styles = StyleSheet.create({
         padding: 15
     },
     text: {
-        fontFamily: 'Gaga',
-        color: '#fff',
+        color: Colors.PRIMARY,
         fontSize: 25,
-        textAlign: 'center'
+        textAlign: 'center',
+        fontWeight: 'bold'
     },
 })

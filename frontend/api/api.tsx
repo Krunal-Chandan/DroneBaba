@@ -2,7 +2,10 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Replace with your laptop's IP address if testing on a mobile device
-const API_URL = 'http://192.168.162.244:3000';
+const API_URL = 'http://192.168.82.244:3000';
+// const API_URL = 'http://192.168.56.1:8081';
+// const API_URL = 'http://10.0.2.2:3000';
+// const API_URL = 'http://localhost:3000';
 
 const api = {
   register: async (user: { name: string; email: string; password: string; city: string; role: string }) => {
@@ -37,23 +40,22 @@ const api = {
     }
   },
 
-    getUser: async () => {
-      try {
-        const token = await AsyncStorage.getItem('access_token');
-        console.log(token);
-        if (!token) throw new Error('No token found. Please log in.');
-        const response = await axios.get(`${API_URL}/api/v1/user/getUser`, {
-          headers: { "Authorization": token }, // Fixed header to match verifyUser
-        });
-        return response.data.user; // Expecting user object without password
-      } catch (error: any) {
-        if (error.response && error.response.data && error.response.data.message) {
-          throw new Error(error.response.data.message);
-        } else {
-          throw new Error('Failed to fetch user. Please try again.');
-        }
+  getUser: async () => {
+    try {
+      const token = await AsyncStorage.getItem('access_token');
+      if (!token) throw new Error('No token found. Please log in.');
+      const response = await axios.get(`${API_URL}/api/v1/user/getUser`, {
+        headers: { Authorization: token },
+      });
+      return response.data.user; // Expecting user object without password
+    } catch (error: any) {
+      if (error.response && error.response.data && error.response.data.message) {
+        throw new Error(error.response.data.message);
+      } else {
+        throw new Error('Failed to fetch user. Please try again.');
       }
-    },
+    }
+  },
 
   logout: async () => {
     try {
@@ -116,6 +118,7 @@ const api = {
       throw new Error(error.response?.data?.message || 'Failed to save location details.');
     }
   },
+
   addDrone: async (droneData: {
     name: string;
     type: string;
@@ -129,8 +132,8 @@ const api = {
     try {
       const token = await AsyncStorage.getItem('access_token');
       if (!token) throw new Error('No token found. Please log in.');
-      const response = await axios.post(`${API_URL}/api/v1/drone/add`, droneData, {
-        headers: { Authorization: token }, 
+      const response = await axios.post(`${API_URL}/api/v1/drone/addDrone`, droneData, {
+        headers: { Authorization: token },
       });
       return response.data;
     } catch (error: any) {
@@ -142,12 +145,25 @@ const api = {
     try {
       const token = await AsyncStorage.getItem('access_token');
       if (!token) throw new Error('No token found. Please log in.');
-      const response = await axios.get(`${API_URL}/api/v1/drone/details/${droneId}`, {
+      const response = await axios.get(`${API_URL}/api/v1/drone/getDroneDetails/${droneId}`, {
         headers: { Authorization: token },
       });
-      return response.data.droneDetail;
+      return response.data.droneDetail; // Returns a single drone object
     } catch (error: any) {
       throw new Error(error.response?.data?.message || 'Failed to fetch drone details.');
+    }
+  },
+
+  getAllDroneOfDroneOwner: async () => {
+    try {
+      const token = await AsyncStorage.getItem('access_token');
+      if (!token) throw new Error('No token found. Please log in.');
+      const response = await axios.get(`${API_URL}/api/v1/drone/getAllDroneOfDroneOwner`, {
+        headers: { Authorization: token },
+      });
+      return response.data.drones; // Returns an array of drones
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || 'Failed to fetch drones for owner.');
     }
   },
 
@@ -155,10 +171,10 @@ const api = {
     try {
       const token = await AsyncStorage.getItem('access_token');
       if (!token) throw new Error('No token found. Please log in.');
-      const response = await axios.get(`${API_URL}/api/v1/drone/schedules`, {
+      const response = await axios.get(`${API_URL}/api/v1/drone/getAllSchedulesOfDroneOwner`, {
         headers: { Authorization: token },
       });
-      return response.data.Schedules;
+      return response.data.Schedules; // Returns array of { DroneName, DroneSchedule }
     } catch (error: any) {
       throw new Error(error.response?.data?.message || 'Failed to fetch schedules.');
     }
@@ -169,7 +185,7 @@ const api = {
       const token = await AsyncStorage.getItem('access_token');
       if (!token) throw new Error('No token found. Please log in.');
       const response = await axios.post(
-        `${API_URL}/api/v1/drone/schedule/delete/${droneId}`,
+        `${API_URL}/api/v1/drone/deleteSchedule/${droneId}`,
         { date, timeSlot },
         { headers: { Authorization: token } }
       );
@@ -178,6 +194,33 @@ const api = {
       throw new Error(error.response?.data?.message || 'Failed to delete schedule.');
     }
   },
+
+  getAllDrones: async () => {
+    try {
+      const token = await AsyncStorage.getItem('access_token');
+      if (!token) throw new Error('No token found. Please log in.');
+      const response = await axios.get(`${API_URL}/api/v1/drone/getAllDrones`, {
+        headers: { Authorization: token },
+      });
+      return response.data.drones; // Returns array of drones with selected fields
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || 'Failed to fetch all drones.');
+    }
+  },
+  
+  createSchedule: async (droneId: string, scheduleData: { date: string; timeSlot: string }) => {
+    try {
+      const token = await AsyncStorage.getItem('access_token');
+      if (!token) throw new Error('No token found. Please log in.');
+      const response = await axios.post(`${API_URL}/api/v1/drone/createSchedule/${droneId}`, scheduleData, {
+        headers: { Authorization: token },
+      });
+      return response.data; // Expecting { message: "Schedule Booked Successfully" }
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || 'Failed to create schedule.');
+    }
+  },
 };
 
 export { api };
+

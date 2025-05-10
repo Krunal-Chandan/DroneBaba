@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Linking, SafeAreaView, ActivityIndicator } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { api } from '@/api/api';
 
@@ -26,51 +26,32 @@ export default function DHome() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const checkLocationDetails = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const res = await api.getUserLocationDetails(); // Returns { user: { ... } }
-        if (res && Object.keys(res).length > 0) {
-          await AsyncStorage.setItem('locationDetails', JSON.stringify(res));
-          setLocationDetailsExist(true);
-        } else {
+  useFocusEffect(
+    useCallback(() => {
+      const checkLocationDetails = async () => {
+        setLoading(true);
+        setError(null);
+        try {
+          const res = await api.getUserLocationDetails(); // Returns { user: {...} }
+          if (res && Object.keys(res).length > 0) {
+            await AsyncStorage.setItem('locationDetails', JSON.stringify(res));
+            setLocationDetailsExist(true);
+          } else {
+            setLocationDetailsExist(false);
+          }
+        } catch (err: any) {
+          console.error('Error fetching location details:', err);
+          setError(err.message || 'Failed to fetch location details.');
           setLocationDetailsExist(false);
+        } finally {
+          setLoading(false);
         }
-      } catch (err: any) {
-        console.error('Error fetching location details:', err);
-        setError(err.message || 'Failed to fetch location details.');
-        setLocationDetailsExist(false);
-      } finally {
-        setLoading(false);
-      }
-    };
+      };
 
-    checkLocationDetails();
-  }, []);
+      checkLocationDetails();
+    }, [])
+  );
 
-  if (loading) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <ActivityIndicator size="large" color="#2ECC71" style={styles.loading} />
-      </SafeAreaView>
-    );
-  }
-
-  if (error) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <Text style={styles.errorText}>{error}</Text>
-        <TouchableOpacity
-          style={styles.retryButton}
-          onPress={() => router.push('/locDetails')}
-        >
-          <Text style={styles.retryButtonText}>Retry or Update Profile</Text>
-        </TouchableOpacity>
-      </SafeAreaView>
-    );
-  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -87,20 +68,32 @@ export default function DHome() {
         </View>
       </View>
 
-      {/* Profile Prompt */}
+      {/* Loading State */}
+      {loading && <ActivityIndicator size="large" color="#2ECC71" style={styles.loading} />}
+
+      {/* Error State */}
+      {/* {error && (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={() => router.push('/locDetails')}>
+            <Text style={styles.retryButtonText}>Retry or Update Profile</Text>
+          </TouchableOpacity>
+        </View>
+      )} */}
+
+      {/* Profile Details Check */}
       {locationDetailsExist === false && (
-        <TouchableOpacity
-          style={styles.profilePrompt}
-          onPress={() => router.push('/locDetails')}
-        >
-          <Text style={styles.profilePromptText}>🚨 Please complete your profile to continue.</Text>
-        </TouchableOpacity>
+        <View style={styles.noDetailsBlock}>
+          <Text style={styles.noDetailsText}>It seems we do not have your Details</Text>
+          <Text style={styles.noDetailsText}>Fill your Details</Text>
+          <TouchableOpacity style={styles.editButton} onPress={() => router.push('/locDetails')}>
+            <Text style={styles.editButtonText}>Fill Details</Text>
+          </TouchableOpacity>
+        </View>
       )}
 
-      {/* Title */}
+      {/* Title and Work Items (shown regardless of location details) */}
       <Text style={styles.title}>Today's Work</Text>
-
-      {/* Work Items */}
       <ScrollView style={styles.scrollView}>
         {workItems.map((item) => (
           <View key={item.id} style={styles.card}>
@@ -122,9 +115,9 @@ export default function DHome() {
       </ScrollView>
 
       {/* FAB for Adding Drone */}
-      <TouchableOpacity style={styles.fab} onPress={() => router.push('./drone-owner/adddrone')}>
+      {/* <TouchableOpacity style={styles.fab} onPress={() => router.push('/drone-owner/addDrone')}>
         <Text style={styles.fabText}>+</Text>
-      </TouchableOpacity>
+      </TouchableOpacity> */}
     </SafeAreaView>
   );
 }
@@ -233,7 +226,11 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
   },
-  profilePrompt: {
+  loading: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  errorContainer: {
     backgroundColor: '#FFEFD5',
     padding: 15,
     borderRadius: 10,
@@ -241,33 +238,50 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#FFA07A',
   },
-  profilePromptText: {
+  errorText: {
     color: '#d35400',
     fontSize: 15,
     fontWeight: '500',
     textAlign: 'center',
-  },
-  loading: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  errorText: {
-    textAlign: 'center',
-    color: '#E74C3C',
-    fontSize: 16,
-    marginTop: 20,
+    marginBottom: 10,
   },
   retryButton: {
     backgroundColor: '#28a745',
-    paddingVertical: 12,
+    paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 6,
     alignSelf: 'center',
-    marginTop: 20,
   },
   retryButtonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  noDetailsBlock: {
+    backgroundColor: '#FFEFD5',
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#FFA07A',
+  },
+  noDetailsText: {
+    color: '#d35400',
+    fontSize: 15,
+    fontWeight: '500',
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+  editButton: {
+    backgroundColor: '#2ECC71',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 6,
+    alignSelf: 'center',
+  },
+  editButtonText: {
+    color: '#fff',
+    fontSize: 14,
     fontWeight: '500',
   },
 });

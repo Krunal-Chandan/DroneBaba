@@ -13,11 +13,7 @@ const router = express.Router();
 
 router.post("/addDrone", verifyUser, addDrone);
 router.get("/getDroneDetails/:droneId", verifyUser, getDroneDetails);
-router.get(
-  "/getAllSchedulesOfDroneOwner",
-  verifyUser,
-  getSchedulesOfDroneOwner
-);
+router.get("/getAllSchedulesOfDroneOwner", verifyUser, getSchedulesOfDroneOwner);
 router.delete("/deleteSchedule/:droneId", verifyUser, deleteSchedule);
 router.get("/getAllDroneOfDroneOwner", verifyUser, getAllDroneOfDroneOwner);
 router.get("/getAllDrones", verifyUser, getAllDrones);

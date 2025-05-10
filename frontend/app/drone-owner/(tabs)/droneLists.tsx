@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -9,8 +9,9 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { api } from '@/api/api';
+import { useRefreshOnFocus } from '@/components/refresh';
 
 type Drone = {
   _id: string;
@@ -20,7 +21,7 @@ type Drone = {
   pricePerAcre: string;
   durability: string;
   purchasedDate: string;
-  isNGO: boolean;
+  isNGO: string; // Updated to string to match API response
   ngoName?: string;
   schedule: Array<{ date: string; timeSlot: string }>;
 };
@@ -31,43 +32,52 @@ export default function DronesListScreen() {
   const [error, setError] = useState('');
   const router = useRouter();
 
-  useEffect(() => {
-    const fetchDrones = async () => {
-      try {
-        const schedules = await api.getSchedulesOfDroneOwner();
-        // Fetch detailed drone info for each drone ID in schedules
-        const dronePromises = schedules.map(async (schedule : any) => {
-          const droneDetail = await api.getDroneDetails(schedule.DroneName); // Assuming DroneName is the _id
-          return droneDetail;
-        });
-        const droneDetails = await Promise.all(dronePromises);
-        setDrones(droneDetails);
-      } catch (err: any) {
-        setError(err.message || 'Failed to fetch drones.');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchDrones();
-  }, []);
-
-  const renderDroneItem = ({ item }: { item: Drone }) => (
-    <View style={styles.droneItem}>
-      <Text style={styles.droneName}>{item.name}</Text>
-      <Text style={styles.droneDetail}>Type: {item.type}</Text>
-      <Text style={styles.droneDetail}>Capacity: {item.capacity}</Text>
-      <Text style={styles.droneDetail}>Price/Acre: ${item.pricePerAcre}</Text>
-      <Text style={styles.droneDetail}>Durability: {item.durability}</Text>
-      <Text style={styles.droneDetail}>Purchased: {item.purchasedDate}</Text>
-      <Text style={styles.droneDetail}>NGO: {item.isNGO ? (item.ngoName || 'Yes') : 'No'}</Text>
-      <Text style={styles.droneDetail}>
-        Schedules: {item.schedule.length > 0 ? item.schedule.map(s => `${s.date} (${s.timeSlot})`).join(', ') : 'None'}
-      </Text>
-    </View>
+  useFocusEffect(
+    useCallback(() => {
+      const fetchDrones = async () => {
+        try {
+          setLoading(true);
+          const drones = await api.getAllDroneOfDroneOwner();
+          console.log('🛸 Total drones fetched:', drones.length);
+          setDrones(drones);
+        } catch (err: any) {
+          setError(err.message || 'Failed to fetch drones.');
+        } finally {
+          setLoading(false);
+        }
+      };
+  
+      fetchDrones();
+    }, [])
   );
+
+  const renderDroneItem = ({ item }: { item: Drone }) => {
+    console.log('🛸 Rendering drone:', item); // Debug log for each item
+    return (
+      <View style={styles.droneItem}>
+        <Text style={styles.droneName}>{item.name}</Text>
+        <Text style={styles.droneDetail}>Type: {item.type}</Text>
+        <Text style={styles.droneDetail}>Capacity: {item.capacity}</Text>
+        <Text style={styles.droneDetail}>Price/Acre: ${item.pricePerAcre}</Text>
+        <Text style={styles.droneDetail}>Durability: {item.durability}</Text>
+        <Text style={styles.droneDetail}>
+          Purchased: {new Date(item.purchasedDate).toLocaleDateString()}
+        </Text>
+        <Text style={styles.droneDetail}>
+          NGO: {item.isNGO === 'yes' ? (item.ngoName || 'Yes') : 'No'}
+        </Text>
+        <Text style={styles.droneDetail}>
+          Schedules: {Array.isArray(item.schedule) && item.schedule.length > 0
+            ? item.schedule.map((s, index) => `${s.date} (${s.timeSlot})`).join(', ')
+            : 'None'}
+        </Text>
+      </View>
+    );
+  };
 
   if (loading) return <ActivityIndicator size="large" color="#2ECC71" style={styles.loading} />;
   if (error) return <Text style={styles.errorText}>{error}</Text>;
+  
 
   return (
     <SafeAreaView style={styles.container}>
@@ -77,6 +87,7 @@ export default function DronesListScreen() {
         renderItem={renderDroneItem}
         keyExtractor={(item) => item._id}
         contentContainerStyle={styles.list}
+        ListEmptyComponent={<Text style={styles.emptyText}>No drones found.</Text>}
       />
       <TouchableOpacity style={styles.floatingButton} onPress={() => router.push('/drone-owner/addDrone')}>
         <MaterialCommunityIcons name="plus" size={24} color="#FFF" />
@@ -122,4 +133,5 @@ const styles = StyleSheet.create({
   },
   loading: { flex: 1, justifyContent: 'center' },
   errorText: { textAlign: 'center', color: '#E74C3C', fontSize: 16, marginTop: 20 },
+  emptyText: { textAlign: 'center', color: '#666', fontSize: 16, marginTop: 20 },
 });
