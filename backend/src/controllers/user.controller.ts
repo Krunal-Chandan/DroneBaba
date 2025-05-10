@@ -66,6 +66,7 @@ export const registerUser = async (req: Request, res: Response) => {
     res.status(201).json({
       message: "User registered successfully",
       user: {
+        _id: newUser._id.toString(),
         name: newUser.name,
         email: newUser.email,
         city: newUser.city,
@@ -112,6 +113,7 @@ export const loginUser = async (req: Request, res: Response) => {
     res.status(201).json({
       message: "User logged in successfully",
       token,
+      role: user.role,
     });
     return;
   } catch (error) {

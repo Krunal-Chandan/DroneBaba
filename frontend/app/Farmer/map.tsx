@@ -26,7 +26,7 @@ export default function MapScreen() {
           touch-action: pan-x pan-y;
         }
       </style> 
-      <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDAaDvpyAna53SLrR2SLD9UOcATuRDxJoA&libraries=places"></script>
+      <script src="https://maps.googleapis.com/maps/api/js?key=&libraries=places"></script>
       <script>
         function initMap() {
           const container = document.getElementById('map');

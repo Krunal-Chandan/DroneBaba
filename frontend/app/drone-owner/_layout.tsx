@@ -17,7 +17,7 @@ export default function DroneOwnerLayout() {
     // return <Redirect href="./dhome" />;
     return (
         <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="dhome" />
+          <Stack.Screen name="addDrone" />
         </Stack>
       );
 }
