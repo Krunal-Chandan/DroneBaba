@@ -125,3 +125,17 @@ const droneOwnerSchema = new mongoose.Schema({
 });
 
 export const droneOwnerModel = mongoose.model("DroneOwner", droneOwnerSchema);
+
+const pilotSchema = new mongoose.Schema({
+  userId: {
+    type: mongoose.Types.ObjectId,
+    ref: "User",
+  },
+  schedule: [
+    {
+      type: Object,
+    },
+  ],
+});
+
+export const pilotModel = mongoose.model("Pilot", pilotSchema);

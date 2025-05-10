@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { DroneInfoModel } from "../models/models";
+import { DroneInfoModel, pilotModel } from "../models/models";
 
 export const createSchedule = async (req: Request, res: Response) => {
   const { date, timeSlot } = req.body;
@@ -8,6 +8,12 @@ export const createSchedule = async (req: Request, res: Response) => {
   const userId = req.user;
 
   const drone = await DroneInfoModel.findById(droneId).select("schedule");
+  if (!drone) {
+    res.status(404).json({
+      message: "Drone Not found please check again",
+    });
+    return;
+  }
   const droneSchedule = drone?.schedule;
 
   if (droneSchedule) {
@@ -24,9 +30,27 @@ export const createSchedule = async (req: Request, res: Response) => {
     }
   }
 
+  const pilot = await pilotModel.findOne({ userId }).select("schedule");
+
+  if (pilot?.schedule) {
+    for (let i = 0; i < pilot.schedule.length; i++) {
+      if (
+        pilot.schedule[i].timeSlot === timeSlot &&
+        pilot.schedule[i].date === date
+      ) {
+        res.status(400).json({
+          message: "You are already scheduled at some other place on this time",
+        });
+        return;
+      }
+    }
+  }
+
   try {
     droneSchedule?.push({ date, timeSlot });
+    pilot?.schedule.push({ date, timeSlot });
     await drone?.save();
+    await pilot?.save();
     res.status(201).json({
       message: "Schedule Booked Successfully",
     });
