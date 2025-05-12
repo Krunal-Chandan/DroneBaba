@@ -139,3 +139,39 @@ const pilotSchema = new mongoose.Schema({
 });
 
 export const pilotModel = mongoose.model("Pilot", pilotSchema);
+
+const jobSchema = new mongoose.Schema({
+  createdBy: {
+    type: mongoose.Types.ObjectId,
+    ref: "User",
+  },
+  date: {
+    type: String,
+    required: true,
+  },
+  time: {
+    type: String,
+    required: true,
+  },
+  farmLocation: {
+    type: String,
+    rqeuired: true,
+  },
+  payDetails: {
+    type: String,
+  },
+  timestamp: {
+    type: Date,
+    default: Date.now,
+  },
+  droneId: {
+    type: mongoose.Types.ObjectId,
+    ref: "DroneInfo",
+  },
+  acceptedBy: {
+    type: mongoose.Types.ObjectId,
+    ref: "User",
+  },
+});
+
+export const jobModel = mongoose.model("Job", jobSchema);

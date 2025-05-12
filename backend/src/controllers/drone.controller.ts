@@ -131,6 +131,7 @@ export const getAllDroneOfDroneOwner = async (req: Request, res: Response) => {
 };
 
 export const deleteSchedule = async (req: Request, res: Response) => {
+  //change hone wala hai
   const { date, timeSlot } = req.body;
   const droneId = req.params.droneId;
   //@ts-ignore
@@ -148,17 +149,19 @@ export const deleteSchedule = async (req: Request, res: Response) => {
 
   try {
     const droneInfo = await DroneInfoModel.findById(droneId).select("schedule");
+
     const schedule = droneInfo?.schedule;
 
     const newSchedule = schedule?.filter((s) => {
-      return s.date !== date && s.timeSlot !== timeSlot;
+      return !(s.date === date && s.timeSlot === timeSlot);
     });
 
     const pilot = await pilotModel.findOne({ userId });
+
     const pilotSchedule = pilot?.schedule;
 
     const newPilotSchedule = pilotSchedule?.filter((s) => {
-      return s.date !== date && s.timeSlot !== timeSlot;
+      return !(s.date === date && s.timeSlot === timeSlot);
     });
 
     if (pilot?.schedule && newPilotSchedule) {
@@ -179,6 +182,7 @@ export const deleteSchedule = async (req: Request, res: Response) => {
     }
 
     await droneInfo?.save();
+    await pilot?.save();
     res.status(201).json({
       message: "Schedule successfully deleted",
       droneInfo,
@@ -193,6 +197,7 @@ export const deleteSchedule = async (req: Request, res: Response) => {
 };
 
 export const getAllDrones = async (req: Request, res: Response) => {
+  //farmer perspective
   //@ts-ignore
   const userId = req.user;
 
@@ -213,6 +218,7 @@ export const getAllDrones = async (req: Request, res: Response) => {
 };
 
 export const getScheduleOfDrone = async (req: Request, res: Response) => {
+  //koi bhi call krskta hai aur jaan skta hai schedule of drone
   const droneId = req.params.droneId;
   try {
     const drone = await DroneInfoModel.findById(droneId);
@@ -246,9 +252,16 @@ export const getScheduleOfPilot = async (req: Request, res: Response) => {
     return;
   }
 
+  const populatedPilot = pilot.schedule.map((s) =>
+    s.populate([
+      { path: "createdBy", select: "-password -role" },
+      { path: "droneId", select: "name type durability capacity pricePerAcre" },
+    ])
+  );
+
   try {
     res.status(200).json({
-      schedule: pilot.schedule,
+      schedule: populatedPilot,
     });
     return;
   } catch (error) {
