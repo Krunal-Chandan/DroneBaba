@@ -1,34 +1,57 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, SafeAreaView } from 'react-native';
 import { useRouter } from 'expo-router';
+import { api } from '@/api/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function AddDrone() {
   const [droneName, setDroneName] = useState('');
   const [droneType, setDroneType] = useState('');
   const [capacity, setCapacity] = useState('');
-  const [batteryDurability, setBatteryDurability] = useState('');
+  const [pricePerAcre, setPricePerAcre] = useState('');
+  const [durability, setDurability] = useState('');
   const [purchaseDate, setPurchaseDate] = useState('');
-  const [isNGOSupported, setIsNGOSupported] = useState<boolean | null>(null); // For radio buttons
+  const [isNGOSupported, setIsNGOSupported] = useState<'yes' | 'no' | null>(null); // Changed to string type
+  const [ngoName, setNgoName] = useState('');
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const handleAddDrone = () => {
-    if (!droneName || !droneType || !capacity || !batteryDurability || !purchaseDate || isNGOSupported === null) {
-      Alert.alert('Error', 'All fields are required!');
+  const handleAddDrone = async () => {
+    // Validate all required fields
+    if (!droneName || !droneType || !capacity || !pricePerAcre || !durability || !purchaseDate || isNGOSupported === null) {
+      Alert.alert('Error', 'All fields except NGO Name (if not NGO) are required!');
       return;
     }
-    // Simulate adding drone (replace with API call later)
-    const droneData = {
-      droneName,
-      droneType,
-      capacity,
-      batteryDurability,
-      purchaseDate,
-      isNGOSupported,
-    };
-    Alert.alert('Success', `Drone "${droneName}" added successfully!`, [
-      { text: 'OK', onPress: () => router.back() },
-    ]);
-    console.log('Drone added:', droneData); // Log for debugging
+
+    // Validate purchase date format (YYYY-MM-DD)
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dateRegex.test(purchaseDate)) {
+      Alert.alert('Error', 'Please enter a valid date in YYYY-MM-DD format (e.g., 2025-04-09)');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const droneData = {
+        name: droneName,
+        type: droneType,
+        capacity,
+        pricePerAcre,
+        durability,
+        purchasedDate: purchaseDate,
+        isNGO: isNGOSupported, // Sending "yes" or "no" as string
+        ngoName: isNGOSupported === 'yes' ? ngoName : undefined,
+      };
+      // @ts-ignore
+      const response = await api.addDrone(droneData);
+      Alert.alert('Success', `Drone "${droneName}" added successfully! Drone ID: ${response.droneId}`, [
+        { text: 'OK', onPress: () => router.back() },
+      ]);
+    } catch (err: any) {
+      Alert.alert('Error', err.message || 'Failed to add drone.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -54,9 +77,16 @@ export default function AddDrone() {
       />
       <TextInput
         style={styles.input}
-        placeholder="Battery Durability (e.g., 30 min)"
-        value={batteryDurability}
-        onChangeText={setBatteryDurability}
+        placeholder="Price Per Acre (e.g., 50)"
+        value={pricePerAcre}
+        onChangeText={setPricePerAcre}
+        keyboardType="numeric"
+      />
+      <TextInput
+        style={styles.input}
+        placeholder="Durability (e.g., 30 min)"
+        value={durability}
+        onChangeText={setDurability}
       />
       <TextInput
         style={styles.input}
@@ -68,25 +98,37 @@ export default function AddDrone() {
       <View style={styles.radioContainer}>
         <TouchableOpacity
           style={styles.radioButton}
-          onPress={() => setIsNGOSupported(true)}
+          onPress={() => setIsNGOSupported('yes')}
         >
-          <View style={[styles.radioCircle, isNGOSupported === true && styles.radioSelected]}>
-            {isNGOSupported === true && <View style={styles.radioInnerCircle} />}
+          <View style={[styles.radioCircle, isNGOSupported === 'yes' && styles.radioSelected]}>
+            {isNGOSupported === 'yes' && <View style={styles.radioInnerCircle} />}
           </View>
           <Text>Yes</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.radioButton}
-          onPress={() => setIsNGOSupported(false)}
+          onPress={() => setIsNGOSupported('no')}
         >
-          <View style={[styles.radioCircle, isNGOSupported === false && styles.radioSelected]}>
-            {isNGOSupported === false && <View style={styles.radioInnerCircle} />}
+          <View style={[styles.radioCircle, isNGOSupported === 'no' && styles.radioSelected]}>
+            {isNGOSupported === 'no' && <View style={styles.radioInnerCircle} />}
           </View>
           <Text>No</Text>
         </TouchableOpacity>
       </View>
-      <TouchableOpacity style={styles.button} onPress={handleAddDrone}>
-        <Text style={styles.buttonText}>Add Drone</Text>
+      {isNGOSupported === 'yes' && (
+        <TextInput
+          style={styles.input}
+          placeholder="NGO Name"
+          value={ngoName}
+          onChangeText={setNgoName}
+        />
+      )}
+      <TouchableOpacity
+        style={[styles.button, loading && styles.disabledButton]}
+        onPress={handleAddDrone}
+        disabled={loading}
+      >
+        <Text style={styles.buttonText}>{loading ? 'Adding...' : 'Add Drone'}</Text>
       </TouchableOpacity>
       <TouchableOpacity style={styles.cancelButton} onPress={() => router.back()}>
         <Text style={styles.cancelButtonText}>Cancel</Text>
@@ -100,8 +142,8 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f0f4f8',
     padding: 20,
-},
-title: {
+  },
+  title: {
     fontSize: 24,
     fontWeight: '600',
     color: '#333',
@@ -157,6 +199,10 @@ title: {
     borderRadius: 8,
     alignItems: 'center',
     marginBottom: 10,
+  },
+  disabledButton: {
+    backgroundColor: '#95C2DE',
+    opacity: 0.7,
   },
   buttonText: {
     color: '#fff',

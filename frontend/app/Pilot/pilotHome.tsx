@@ -62,9 +62,14 @@ export default function PilotHomeScreen() {
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Pilot Dashboard</Text>
-        <TouchableOpacity>
-          <MaterialIcons name="notifications" size={24} color="#333" />
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', }}>
+          <TouchableOpacity style={{ marginRight: 10 }}>
+            <MaterialIcons name="notifications" size={28} color="#333" />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => router.push('/pilotProfile/(tabs)/pilotProfile')}>
+            <MaterialIcons name="account-circle" size={28} color="#333" />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Title */}

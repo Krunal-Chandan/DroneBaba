@@ -24,6 +24,13 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="droneLists"
+        options={{
+          title: 'Drones',
+          tabBarIcon: ({ color }) => <MaterialCommunityIcons name="history" size={30} color={color} />,
+        }}
+      />
+      <Tabs.Screen
         name="workHistory"
         options={{
           title: 'History',
