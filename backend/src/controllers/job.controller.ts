@@ -11,6 +11,7 @@ export const createJob = async (req: Request, res: Response) => {
   const userId = req.user;
   const { date, timeSlot, price } = req.body;
   const droneId = req.params.droneId;
+  const cropId = req.params.cropId;
 
   if (!date || !timeSlot) {
     res.status(400).json({
@@ -28,6 +29,14 @@ export const createJob = async (req: Request, res: Response) => {
     const drone = await DroneInfoModel.findById(droneId).select(
       "name type capacity durability pricePerAcre"
     );
+
+    const crop = await cropModel.findById(cropId).select("farmLocation");
+
+    if (!crop) {
+      res.status(404).json({
+        message: "Crop not found",
+      });
+    }
 
     const scheduleOfDrone = await DroneInfoModel.findById(droneId).select(
       "schedule"
@@ -68,7 +77,7 @@ export const createJob = async (req: Request, res: Response) => {
 
     const job = await jobModel.create({
       date,
-      farmLocation: user.address,
+      farmLocation: crop?.farmLocation,
       payDetails: price,
       time: timeSlot,
       //@ts-ignore

@@ -4,7 +4,7 @@ import { verifyUser } from "../utils/verifyUser";
 
 const router = express.Router();
 
-router.post("/createJob/:droneId", verifyUser, createJob);
+router.post("/createJob/:droneId/:cropId", verifyUser, createJob);
 router.get("/getJobs", getJobs);
 router.get("/getJobs/updates", getUpdates);
 

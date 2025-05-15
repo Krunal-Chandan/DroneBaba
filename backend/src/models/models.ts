@@ -60,6 +60,8 @@ const cropSchema = new mongoose.Schema({
   type: String,
   season: String,
   prevCropName: String,
+  farmLocation: String,
+  farmName: String,
 });
 
 export const cropModel = mongoose.model("Crop", cropSchema);
@@ -79,11 +81,11 @@ const licenseDetailSchema = new mongoose.Schema({
     type: mongoose.Types.ObjectId,
     ref: "User",
   },
-  license_number: String,
-  valid_upto: String,
-  flying_exp: String,
-  license_type: String,
-  flying_drone_type: String,
+  licenseNumber: String,
+  validUpto: String,
+  flyingExp: String,
+  licenseType: String,
+  flyingDroneType: String,
   FIR: {
     type: String,
     enum: ["yes", "no"],

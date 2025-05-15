@@ -185,7 +185,6 @@ export const deleteSchedule = async (req: Request, res: Response) => {
     await pilot?.save();
     res.status(201).json({
       message: "Schedule successfully deleted",
-      droneInfo,
     });
     return;
   } catch (error) {
