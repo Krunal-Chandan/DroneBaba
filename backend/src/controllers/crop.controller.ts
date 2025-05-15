@@ -2,11 +2,20 @@ import { Request, Response } from "express";
 import { cropModel, farmerModel } from "../models/models";
 
 export const createCrop = async (req: Request, res: Response) => {
-  const { name, area, type, season, prevCropName } = req.body;
+  const { name, area, type, season, prevCropName, farmLocation, farmName } =
+    req.body;
   //@ts-ignore
   const userId = req.user;
 
-  if (!name || !area || !type || !season || !prevCropName) {
+  if (
+    !name ||
+    !area ||
+    !type ||
+    !season ||
+    !prevCropName ||
+    !farmLocation ||
+    !farmName
+  ) {
     res.status(403).send({
       message: "Please fill all the required fields",
     });
@@ -31,6 +40,8 @@ export const createCrop = async (req: Request, res: Response) => {
       type,
       season,
       prevCropName,
+      farmLocation,
+      farmName,
     });
 
     crops?.push(crop._id);

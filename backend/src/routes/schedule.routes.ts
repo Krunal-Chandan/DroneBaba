@@ -4,6 +4,6 @@ import { verifyUser } from "../utils/verifyUser";
 
 const router = express.Router();
 
-router.post("/createSchedule/:droneId", verifyUser, createSchedule);
+router.post("/createSchedule/:droneId/:jobId", verifyUser, createSchedule);
 
 export default router;
