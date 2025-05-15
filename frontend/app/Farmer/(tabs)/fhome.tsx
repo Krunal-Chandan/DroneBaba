@@ -56,20 +56,26 @@ export default function FarmerDashboard() {
         const dronesData = await api.getAllDrones();
         console.log('✅ Fetched drones:', dronesData);
 
-        const schedulesData = await api.getSchedulesOfDroneOwner();
-        console.log('✅ Fetched schedules:', schedulesData);
+        let schedulesData = [];
+        try {
+          schedulesData = await api.getSchedulesOfDroneOwner();
+          console.log('✅ Fetched schedules:', schedulesData);
+        } catch (err: any) {
+          console.warn('No schedules found, proceeding with empty schedules:', err.message);
+          schedulesData = []; // Treat as empty array instead of failing
+        }
 
         const dronesWithSchedules = dronesData.map((drone: Drone) => {
           const droneSchedules = schedulesData
             .filter((schedule: any) => schedule.DroneName === drone.name)
             .flatMap((schedule: any) => schedule.DroneSchedule);
-          return { ...drone, schedules: droneSchedules };
+          return { ...drone, schedules: droneSchedules || [] };
         });
 
         setDrones(dronesWithSchedules);
       } catch (err: any) {
-        setError(err.message || 'Failed to fetch drones or schedules.');
-        console.error('Drones/Schedules fetch error:', err);
+        setError(err.message || 'Failed to fetch drones.');
+        console.error('Drones fetch error:', err);
       } finally {
         setLoading(false);
       }
@@ -77,7 +83,7 @@ export default function FarmerDashboard() {
     fetchDronesAndSchedules();
   }, []);
 
-  // Set the selected date to 3 days after the current date when the component mounts
+  // Set the selected date to 1 day after the current date when the component mounts
   useEffect(() => {
     const currentDate = new Date();
     const minDate = new Date(currentDate);
@@ -90,7 +96,7 @@ export default function FarmerDashboard() {
     const dates = [];
     const currentDate = new Date();
     const startDate = new Date(currentDate);
-    startDate.setDate(currentDate.getDate() + 3);
+    startDate.setDate(currentDate.getDate() + 1);
     const endDate = new Date(currentDate);
     endDate.setDate(currentDate.getDate() + 21);
 
@@ -225,9 +231,9 @@ export default function FarmerDashboard() {
                             pathname: '/Farmer/selectFarm',
                             params: { 
                               droneId: drone._id, 
-                              date: selectedDate, // Changed to match FarmSelectionScreen
-                              time: slot.time,    // Changed to match FarmSelectionScreen
-                              pricePerAcre: drone.pricePerAcre
+                              date: selectedDate,
+                              time: slot.time,
+                              pricePerAcre: drone.pricePerAcre,
                             },
                           });
                         }}

@@ -130,7 +130,7 @@ export const getAllDroneOfDroneOwner = async (req: Request, res: Response) => {
   }
 };
 
-export const deleteSchedule = async (req: Request, res: Response) => {
+export const deleteSchedule = async (req: Request, res: Response) => { // change hone wala hai
   const { date, timeSlot } = req.body;
   const droneId = req.params.droneId;
   //@ts-ignore
@@ -192,7 +192,7 @@ export const deleteSchedule = async (req: Request, res: Response) => {
   }
 };
 
-export const getAllDrones = async (req: Request, res: Response) => {
+export const getAllDrones = async (req: Request, res: Response) => { // farmer perspective
   //@ts-ignore
   const userId = req.user;
 
@@ -212,7 +212,7 @@ export const getAllDrones = async (req: Request, res: Response) => {
   }
 };
 
-export const getScheduleOfDrone = async (req: Request, res: Response) => {
+export const getScheduleOfDrone = async (req: Request, res: Response) => { //koi bhi call kr sakta hai, aur jaan sakta hai schedule of drone
   const droneId = req.params.droneId;
   try {
     const drone = await DroneInfoModel.findById(droneId);

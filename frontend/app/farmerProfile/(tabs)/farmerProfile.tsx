@@ -115,7 +115,7 @@ export default function FarmerProfileScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Farmer Profile</Text>
-        <TouchableOpacity style={styles.logoutButton} onPress={async () => { await api.logout(); router.replace('/(auth)/login'); }}>
+        <TouchableOpacity style={styles.logoutButton} onPress={async () => { await api.logout(); await AsyncStorage.clear(); router.replace('/(auth)/login'); }}>
           <MaterialCommunityIcons name="logout" size={24} color="#dc3545" />
         </TouchableOpacity>
       </View>
