@@ -59,7 +59,7 @@ export const fillLocationDetails = async (req: Request, res: Response) => {
 export const getUserLocationDetails = async (req: Request, res: Response) => {
   //@ts-ignore
   const userId = req.user;
-  const user = await OtherDetailModel.findOne({ userId: userId }).populate(
+  const user = await OtherDetailModel.findOne({ userId })?.populate(
     "userId",
     "-password"
   );
@@ -75,8 +75,6 @@ export const getUserLocationDetails = async (req: Request, res: Response) => {
     res.status(201).json({
       message: "Details found",
       user,
-      //@ts-ignore
-      userDet: user.userId.populate(),
     });
     return;
   } catch (error) {
