@@ -2,59 +2,47 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert, Linking } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { api } from '@/api/api';
 
-// Mock database for bookings and farmers (replace with your actual database implementation)
-const BookingDB = () => ({
-  fetchBookingById: async (bookingId: string) => {
-    // Mock data - replace with actual database query
-    return {
-      id: 'B001',
-      pilotId: 'P001',
-      farmerId: 'F001',
-      farmArea: '5 Acre',
-      date: '2025-03-26',
-      time: '08:00 AM',
-      status: 'Accepted',
-      location: 'Nagpur, Maharashtra',
-      mapLink: 'https://maps.app.goo.gl/16MGbR9QGimPu9tb8',
-      droneName: 'DJI Agras T30',
-    };
-  },
-  updateBookingStatus: async (bookingId: string, status: string) => {
-    console.log(`Updated booking ${bookingId} to status: ${status}`);
-  },
-});
+type Booking = {
+  date: string;
+  timeSlot: string;
+  status?: string;
+  job: {
+    _id: string;
+    farmLocation: string;
+    farmArea: string;
+    createdBy: string;
+    droneId: { name: string };
+  };
+};
 
-const FarmerDB = () => ({
-  fetchFarmerById: async (farmerId: string) => {
-    // Mock data - replace with actual database query
-    return {
-      id: 'F001',
-      name: 'John Doe',
-      contactNo: '+919876543210',
-      location: 'Nagpur, Maharashtra',
-    };
-  },
-});
+type Farmer = {
+  name: string;
+  email: string;
+  contactNo: string;
+};
 
 export default function PilotBookingDetailsScreen() {
   const { bookingId } = useLocalSearchParams();
   const router = useRouter();
-  const [booking, setBooking] = useState<any>(null);
-  const [farmer, setFarmer] = useState<any>(null);
+  const [booking, setBooking] = useState<Booking | null>(null);
+  const [farmer, setFarmer] = useState<Farmer | null>(null);
 
   useEffect(() => {
     const fetchBookingDetails = async () => {
       try {
-        const bookingDB = BookingDB();
-        const farmerDB = FarmerDB();
-        const bookingData = await bookingDB.fetchBookingById(bookingId as string);
-        const farmerData = await farmerDB.fetchFarmerById(bookingData.farmerId);
-        setBooking(bookingData);
+        const schedule = await api.getPilotSchedule();
+        const bookingData = schedule.find((item: Booking) => item.job._id === bookingId);
+        if (!bookingData) {
+          throw new Error('Booking not found in schedule.');
+        }
+        const farmerData = await api.getFarmerById(bookingData.job.createdBy);
+        setBooking({ ...bookingData, status: bookingData.status || 'Accepted' });
         setFarmer(farmerData);
-      } catch (err) {
+      } catch (err: any) {
         console.error('Error fetching booking details:', err);
-        Alert.alert('Error', 'Failed to load booking details.');
+        Alert.alert('Error', err.message || 'Failed to load booking details.');
       }
     };
 
@@ -63,26 +51,24 @@ export default function PilotBookingDetailsScreen() {
 
   const handleStartJob = async () => {
     try {
-      const bookingDB = BookingDB();
-      await bookingDB.updateBookingStatus(bookingId as string, 'In Progress');
+      await api.updateScheduleStatus(bookingId as string, 'In Progress');
       setBooking((prev: any) => ({ ...prev, status: 'In Progress' }));
       Alert.alert('Success', 'Job started successfully!');
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error starting job:', err);
-      Alert.alert('Error', 'Failed to start job.');
+      Alert.alert('Error', err.message || 'Failed to start job.');
     }
   };
 
   const handleCompleteJob = async () => {
     try {
-      const bookingDB = BookingDB();
-      await bookingDB.updateBookingStatus(bookingId as string, 'Completed');
+      await api.updateScheduleStatus(bookingId as string, 'Completed');
       Alert.alert('Success', 'Job completed successfully!', [
         { text: 'OK', onPress: () => router.replace('/Pilot/pilotHome') },
       ]);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error completing job:', err);
-      Alert.alert('Error', 'Failed to complete job.');
+      Alert.alert('Error', err.message || 'Failed to complete job.');
     }
   };
 
@@ -91,7 +77,7 @@ export default function PilotBookingDetailsScreen() {
       Alert.alert('Error', 'Farmer contact number not available.');
       return;
     }
-    const message = `Hello ${farmer.name}, I am the pilot for your booking on ${booking?.date} at ${booking?.time}. Let's discuss the details.`;
+    const message = `Hello ${farmer.name}, I am the pilot for your booking on ${booking?.date} at ${booking?.timeSlot}. Let's discuss the details.`;
     const url = `https://wa.me/${farmer.contactNo}?text=${encodeURIComponent(message)}`;
     Linking.openURL(url);
   };
@@ -121,12 +107,12 @@ export default function PilotBookingDetailsScreen() {
           <View style={styles.detailRow}>
             <MaterialCommunityIcons name="map-marker" size={24} color="#2ECC71" style={styles.icon} />
             <Text style={styles.label}>Location:</Text>
-            <Text style={styles.value}>{booking.location}</Text>
+            <Text style={styles.value}>{booking.job.farmLocation}</Text>
           </View>
           <View style={styles.detailRow}>
             <MaterialCommunityIcons name="ruler-square" size={24} color="#2ECC71" style={styles.icon} />
             <Text style={styles.label}>Farm Area:</Text>
-            <Text style={styles.value}>{booking.farmArea}</Text>
+            <Text style={styles.value}>{booking.job.farmArea || 'N/A'} Acre</Text>
           </View>
           <View style={styles.detailRow}>
             <MaterialCommunityIcons name="calendar" size={24} color="#2ECC71" style={styles.icon} />
@@ -136,12 +122,12 @@ export default function PilotBookingDetailsScreen() {
           <View style={styles.detailRow}>
             <MaterialCommunityIcons name="clock" size={24} color="#2ECC71" style={styles.icon} />
             <Text style={styles.label}>Time:</Text>
-            <Text style={styles.value}>{booking.time}</Text>
+            <Text style={styles.value}>{booking.timeSlot}</Text>
           </View>
           <View style={styles.detailRow}>
             <MaterialCommunityIcons name="drone" size={24} color="#2ECC71" style={styles.icon} />
             <Text style={styles.label}>Drone:</Text>
-            <Text style={styles.value}>{booking.droneName}</Text>
+            <Text style={styles.value}>{booking.job.droneId.name}</Text>
           </View>
           <View style={styles.detailRow}>
             <MaterialCommunityIcons name="information" size={24} color="#2ECC71" style={styles.icon} />
@@ -150,7 +136,7 @@ export default function PilotBookingDetailsScreen() {
               {booking.status}
             </Text>
           </View>
-          <TouchableOpacity style={styles.mapButton} onPress={() => Linking.openURL(booking.mapLink)}>
+          <TouchableOpacity style={styles.mapButton} onPress={() => Linking.openURL(`https://maps.google.com/?q=${booking.job.farmLocation}`)}>
             <Text style={styles.mapText}>📍 Open Map</Text>
           </TouchableOpacity>
         </View>

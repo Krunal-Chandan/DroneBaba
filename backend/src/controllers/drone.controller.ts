@@ -201,7 +201,7 @@ export const getAllDrones = async (req: Request, res: Response) => {
 
   try {
     const drones = await DroneInfoModel.find().select(
-      "name type capacity durability"
+      "name type capacity durability pricePerAcre"
     );
 
     res.status(200).json({

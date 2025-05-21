@@ -207,17 +207,148 @@ const api = {
       throw new Error(error.response?.data?.message || 'Failed to fetch all drones.');
     }
   },
-  
-  createSchedule: async (droneId: string, scheduleData: { date: string; timeSlot: string }) => {
+
+  createJob: async (jobData: {
+    droneId: string;
+    date: string;
+    time: string;
+    farmName: string;
+    farmArea: string;
+    totalCost: number;
+  }) => {
     try {
       const token = await AsyncStorage.getItem('access_token');
       if (!token) throw new Error('No token found. Please log in.');
-      const response = await axios.post(`${API_URL}/api/v1/drone/createSchedule/${droneId}`, scheduleData, {
+      const response = await axios.post(`${API_URL}/api/v1/job/createJob`, jobData, {
         headers: { Authorization: token },
       });
-      return response.data; // Expecting { message: "Schedule Booked Successfully" }
+      return response.data.jobId; // Expecting { jobId: string }
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || 'Failed to create job.');
+    }
+  },
+
+  createSchedule: async (droneId: string, jobId: string) => {
+    try {
+      const token = await AsyncStorage.getItem('access_token');
+      if (!token) throw new Error('No token found. Please log in.');
+      const response = await axios.post(`${API_URL}/api/v1/drone/createSchedule/${droneId}/${jobId}`, {}, {
+        headers: { Authorization: token },
+      });
+      return response.data; // Expecting { message: "Schedule booked and job accepted successfully" }
     } catch (error: any) {
       throw new Error(error.response?.data?.message || 'Failed to create schedule.');
+    }
+  },
+
+  getJobs: async () => {
+    try {
+      const token = await AsyncStorage.getItem('access_token');
+      if (!token) throw new Error('No token found. Please log in.');
+      const response = await axios.get(`${API_URL}/api/v1/job/getJobs`, {
+        headers: { Authorization: token },
+      });
+      return response.data.jobs; // Array of jobs
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || 'Failed to fetch jobs.');
+    }
+  },
+
+  getUpdates: async () => {
+    try {
+      const token = await AsyncStorage.getItem('access_token');
+      if (!token) throw new Error('No token found. Please log in.');
+      const response = await axios.get(`${API_URL}/api/v1/job/getUpdates`, {
+        headers: { Authorization: token },
+      });
+      return response.status === 204 ? null : response.data; // Returns { newJobs } or null if 204
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || 'Failed to fetch updates.');
+    }
+  },
+
+  getPilotSchedule: async () => {
+    try {
+      const token = await AsyncStorage.getItem('access_token');
+      if (!token) throw new Error('No token found. Please log in.');
+      const response = await axios.get(`${API_URL}/api/v1/pilot/getSchedule`, {
+        headers: { Authorization: token },
+      });
+      return response.data.schedule; // Array of schedule entries
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || 'Failed to fetch pilot schedule.');
+    }
+  },
+
+  getFarmerById: async (farmerId: string) => {
+    try {
+      const token = await AsyncStorage.getItem('access_token');
+      if (!token) throw new Error('No token found. Please log in.');
+      const response = await axios.get(`${API_URL}/api/v1/user/getFarmer/${farmerId}`, {
+        headers: { Authorization: token },
+      });
+      return response.data.farmer; // Farmer object
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || 'Failed to fetch farmer details.');
+    }
+  },
+  
+  createCrop: async (cropData: {
+    name: string;
+    area: string;
+    type: string;
+    season: string;
+    prevCropName: string;
+    farmLocation: string;
+    farmName: string;
+  }) => {
+    // try {
+    //   const token = await AsyncStorage.getItem('access_token');
+    //   if (!token) throw new Error('No token found. Please log in.');
+    //   const response = await axios.post(`${API_URL}/api/v1/crops`, cropData, {
+    //     headers: { Authorization: token },
+    //   });
+    //   return response.data; // Expecting { message: "Crop added successfully", cropId: string }
+    // } catch (error: any) {
+    //   throw new Error(error.response?.data?.message || 'Failed to create crop.');
+    // }
+    try {
+        const token = await AsyncStorage.getItem('access_token');
+        console.log('Token for createCrop:', token); // Add this log
+        if (!token) throw new Error('No token found. Please log in.');
+        const response = await axios.post(`${API_URL}/api/v1/crop/createCrop`, cropData, {
+            headers: { Authorization: token },
+        });
+        return response.data; // Expecting { message: "Crop added successfully", cropId: string }
+    } catch (error: any) {
+        console.error('createCrop error:', error.response?.data || error.message); // Add this log
+        throw new Error(error.response?.data?.message || 'Failed to create crop.');
+    }
+  },
+
+  getCrop: async (cropId: string) => {
+    try {
+      const token = await AsyncStorage.getItem('access_token');
+      if (!token) throw new Error('No token found. Please log in.');
+      const response = await axios.get(`${API_URL}/api/v1/crop/${cropId}`, {
+        headers: { Authorization: token },
+      });
+      return response.data.crop; // Expecting crop object
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || 'Failed to fetch crop.');
+    }
+  },
+
+  getAllCrops: async () => {
+    try {
+      const token = await AsyncStorage.getItem('access_token');
+      if (!token) throw new Error('No token found. Please log in.');
+      const response = await axios.get(`${API_URL}/api/v1/crop/getAllCrops`, {
+        headers: { Authorization: token },
+      });
+      return response.data.crops; // Expecting array of crops
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || 'Failed to fetch crops.');
     }
   },
 };

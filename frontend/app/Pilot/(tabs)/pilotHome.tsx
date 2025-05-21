@@ -2,52 +2,30 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, SafeAreaView } from 'react-native';
 import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { api } from '@/api/api';
 
-// Mock database for pilot bookings (replace with your actual database implementation)
-const PilotDB = () => ({
-  fetchPilotBookings: async (pilotId: string) => {
-    // Mock data - replace with actual database query
-    return [
-      {
-        id: 'B001',
-        pilotId: 'P001',
-        farmerId: 'F001',
-        farmArea: '5 Acre',
-        date: '2025-03-26',
-        time: '08:00 AM',
-        status: 'Accepted',
-        location: 'Nagpur, Maharashtra',
-        mapLink: 'https://maps.app.goo.gl/16MGbR9QGimPu9tb8',
-        droneName: 'DJI Agras T30',
-      },
-      {
-        id: 'B002',
-        pilotId: 'P001',
-        farmerId: 'F002',
-        farmArea: '3 Acre',
-        date: '2025-03-27',
-        time: '09:00 AM',
-        status: 'Accepted',
-        location: 'Pune, Maharashtra',
-        mapLink: 'https://maps.app.goo.gl/w6CPAPLb7J6dBGyL8',
-        droneName: 'DJI Mavic 2',
-      },
-    ];
-  },
-});
+type Booking = {
+  date: string;
+  timeSlot: string;
+  job: {
+    _id: string;
+    farmLocation: string;
+    farmArea: string;
+    droneId: { name: string };
+  };
+};
 
 export default function PilotHomeScreen() {
-  const [bookings, setBookings] = useState<any[]>([]);
+  const [bookings, setBookings] = useState<Booking[]>([]);
   const router = useRouter();
   const pilotId = 'P001'; // Replace with actual pilot ID (e.g., from auth context)
 
   useEffect(() => {
     const fetchBookings = async () => {
       try {
-        const pilotDB = PilotDB();
-        const pilotBookings = await pilotDB.fetchPilotBookings(pilotId);
-        setBookings(pilotBookings);
-      } catch (err) {
+        const pilotSchedule = await api.getPilotSchedule();
+        setBookings(pilotSchedule || []);
+      } catch (err: any) {
         console.error('Error fetching pilot bookings:', err);
       }
     };
@@ -62,7 +40,10 @@ export default function PilotHomeScreen() {
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Pilot Dashboard</Text>
-        <View style={{ flexDirection: 'row', }}>
+        <View style={{ flexDirection: 'row' }}>
+          {/* <TouchableOpacity style={{ marginRight: 10 }} onPress={() => router.push('/Pilot/pilotJobs')}>
+            <MaterialIcons name="work" size={28} color="#333" />
+          </TouchableOpacity> */}
           <TouchableOpacity style={{ marginRight: 10 }}>
             <MaterialIcons name="notifications" size={28} color="#333" />
           </TouchableOpacity>
@@ -80,25 +61,25 @@ export default function PilotHomeScreen() {
         {bookings.length === 0 ? (
           <Text style={styles.noBookings}>No assigned bookings available.</Text>
         ) : (
-          bookings.map(booking => (
+          bookings.map((booking, index) => (
             <TouchableOpacity
-              key={booking.id}
+              key={`${booking.job._id}-${index}`}
               style={styles.card}
               onPress={() =>
                 router.push({
                   pathname: '/Pilot/pilotBooking',
-                  params: { bookingId: booking.id },
+                  params: { bookingId: booking.job._id },
                 })
               }
             >
               <View style={styles.cardHeader}>
-                <Text style={styles.cardTitle}>{booking.location}</Text>
+                <Text style={styles.cardTitle}>{booking.job.farmLocation}</Text>
                 <MaterialCommunityIcons name="drone" size={24} color="#2ECC71" />
               </View>
               <Text style={styles.cardDetails}>
-                Farm Area: {booking.farmArea}{'\n'}
-                Date & Time: {booking.date} at {booking.time}{'\n'}
-                Drone: {booking.droneName}
+                Farm Area: {booking.job.farmArea || 'N/A'} Acre{'\n'}
+                Date & Time: {booking.date} at {booking.timeSlot}{'\n'}
+                Drone: {booking.job.droneId.name}
               </Text>
             </TouchableOpacity>
           ))
