@@ -30,7 +30,7 @@ export const createJob = async (req: Request, res: Response) => {
       "name type capacity durability pricePerAcre"
     );
 
-    const crop = await cropModel.findById(cropId).select("farmLocation");
+    const crop = await cropModel.findById(cropId).select("farmLocation area");
 
     if (!crop) {
       res.status(404).json({
@@ -83,6 +83,8 @@ export const createJob = async (req: Request, res: Response) => {
       //@ts-ignore
       createdBy: user.userId._id,
       droneId: drone?._id,
+      farmArea: crop?.area,
+      farmerMobile: user.whatsapp_number,
     });
 
     const populatedJob = await job.populate([
