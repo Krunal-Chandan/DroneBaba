@@ -25,9 +25,9 @@ export default function PricingScreen() {
   const slotTime = time as string || 'Not selected';
   const droneIdSafe = droneId as string || '';
   const pricePerAcreRaw = pricePerAcre as string || '0';
-  
+
   // Log and validate pricePerAcre
-  // console.log('Received pricePerAcre:', pricePerAcreRaw);
+  console.log('Received pricePerAcre:', pricePerAcreRaw);
   const pricePerAcreSafe = parseFloat(pricePerAcreRaw);
   if (isNaN(pricePerAcreSafe) || pricePerAcreSafe === 0) {
     console.warn('Warning: pricePerAcre is invalid or zero:', pricePerAcreSafe);
@@ -54,10 +54,17 @@ export default function PricingScreen() {
     const fetchFarms = async () => {
       setLoading(true);
       try {
-        const response = await api.getAllCrops();
-        setFarms(response || []);
+        const fetchedCrops = await api.getAllCrops(); // Returns the array directly
+        console.log('Fetched crops:', fetchedCrops);
+        setFarms(fetchedCrops || []); // Ensure it's an array
+        if (!fetchedCrops || fetchedCrops.length === 0) {
+          setError('No crops found. Please add a new farm.');
+        } else {
+          setError(''); // Clear any previous error
+        }
       } catch (err: any) {
-        setError(err.message || 'Failed to fetch farms.');
+        console.error('Error fetching farms:', err);
+        setError('Failed to fetch farms. Please check your connection or try again later.');
       } finally {
         setLoading(false);
       }
@@ -168,11 +175,12 @@ export default function PricingScreen() {
     const names = selectedFarmsData.map((farm) => farm.farmName).join(', ');
     setTotalArea(total);
     setFarmNames(names);
+    console.log('Selected farms:', selectedFarmsData, 'Total area:', total, 'Total cost:', pricePerAcreSafe * total);
     setFarmModalVisible(false);
   };
 
   const totalCost = pricePerAcreSafe * totalArea;
-  // console.log('Calculated totalCost:', totalCost, 'pricePerAcreSafe:', pricePerAcreSafe, 'totalArea:', totalArea);
+  console.log('Calculated totalCost:', totalCost, 'pricePerAcreSafe:', pricePerAcreSafe, 'totalArea:', totalArea);
 
   const handleConfirmBooking = async () => {
     if (!droneIdSafe || !selectedDate || !slotTime || !farmNames || totalArea === 0) {
@@ -184,26 +192,36 @@ export default function PricingScreen() {
       return;
     }
 
+    const selectedFarmsData = farms.filter((farm) => selectedFarms.includes(farm._id));
+    if (selectedFarmsData.length === 0) {
+      alert('Please select at least one farm to proceed.');
+      return;
+    }
+    const cropId = selectedFarmsData[0]._id;
+
     try {
       const jobId = await api.createJob({
         droneId: droneIdSafe,
+        cropId,
         date: selectedDate,
         time: slotTime,
-        farmName: farmNames,
-        farmArea: totalArea.toString(),
-        totalCost: totalCost,
+        //@ts-ignore
+        price: totalCost.toString(), // This is a number, but createJob will convert it to a string
       });
 
-      await api.createSchedule(droneIdSafe, jobId);
+      // console.log('Job ID after createJob:', jobId);
+
+      // await api.createSchedule(droneIdSafe, jobId);
 
       router.replace({
         pathname: '/Farmer/fhome',
         params: { showBookingModal: 'true' },
       });
     } catch (error: any) {
+      console.error('Confirm booking error:', error.message);
       alert(error.message || 'Failed to confirm booking.');
     }
-  };
+  }
 
   const renderFarmItem = ({ item }: { item: Crop }) => (
     <TouchableOpacity
@@ -212,7 +230,7 @@ export default function PricingScreen() {
     >
       <View style={styles.farmInfo}>
         <Text style={styles.farmName}>{item.farmName}</Text>
-        <Text style={styles.farmDetails}>{item.farmLocation} • {item.area}</Text>
+        <Text style={styles.farmDetails}>{item.area}</Text>
       </View>
       <View
         style={[styles.checkbox, selectedFarms.includes(item._id) && styles.selectedCheckbox]}

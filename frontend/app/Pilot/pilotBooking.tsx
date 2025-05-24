@@ -7,27 +7,20 @@ import { api } from '@/api/api';
 type Booking = {
   date: string;
   timeSlot: string;
-  status?: string;
   job: {
     _id: string;
     farmLocation: string;
-    farmArea: string;
+    payDetails: string;
     createdBy: string;
-    droneId: { name: string };
+    droneId: { name: string; _id: string };
   };
-};
-
-type Farmer = {
-  name: string;
-  email: string;
-  contactNo: string;
 };
 
 export default function PilotBookingDetailsScreen() {
   const { bookingId } = useLocalSearchParams();
   const router = useRouter();
   const [booking, setBooking] = useState<Booking | null>(null);
-  const [farmer, setFarmer] = useState<Farmer | null>(null);
+  const [status, setStatus] = useState<string>('Accepted'); // Local state for status
 
   useEffect(() => {
     const fetchBookingDetails = async () => {
@@ -37,9 +30,7 @@ export default function PilotBookingDetailsScreen() {
         if (!bookingData) {
           throw new Error('Booking not found in schedule.');
         }
-        const farmerData = await api.getFarmerById(bookingData.job.createdBy);
-        setBooking({ ...bookingData, status: bookingData.status || 'Accepted' });
-        setFarmer(farmerData);
+        setBooking(bookingData);
       } catch (err: any) {
         console.error('Error fetching booking details:', err);
         Alert.alert('Error', err.message || 'Failed to load booking details.');
@@ -49,20 +40,17 @@ export default function PilotBookingDetailsScreen() {
     fetchBookingDetails();
   }, [bookingId]);
 
-  const handleStartJob = async () => {
-    try {
-      await api.updateScheduleStatus(bookingId as string, 'In Progress');
-      setBooking((prev: any) => ({ ...prev, status: 'In Progress' }));
-      Alert.alert('Success', 'Job started successfully!');
-    } catch (err: any) {
-      console.error('Error starting job:', err);
-      Alert.alert('Error', err.message || 'Failed to start job.');
-    }
+  const handleStartJob = () => {
+    setStatus('In Progress');
+    Alert.alert('Success', 'Job started successfully!');
   };
 
   const handleCompleteJob = async () => {
+    if (!booking) return;
     try {
-      await api.updateScheduleStatus(bookingId as string, 'Completed');
+      // Delete the schedule from both pilot and drone
+      await api.deleteSchedule(booking.job.droneId._id, booking.date, booking.timeSlot);
+      setStatus('Completed');
       Alert.alert('Success', 'Job completed successfully!', [
         { text: 'OK', onPress: () => router.replace('/Pilot/pilotHome') },
       ]);
@@ -72,17 +60,11 @@ export default function PilotBookingDetailsScreen() {
     }
   };
 
-  const handleWhatsApp = () => {
-    if (!farmer?.contactNo) {
-      Alert.alert('Error', 'Farmer contact number not available.');
-      return;
-    }
-    const message = `Hello ${farmer.name}, I am the pilot for your booking on ${booking?.date} at ${booking?.timeSlot}. Let's discuss the details.`;
-    const url = `https://wa.me/${farmer.contactNo}?text=${encodeURIComponent(message)}`;
-    Linking.openURL(url);
+  const handleContact = () => {
+    Alert.alert('Error', 'Invalid number');
   };
 
-  if (!booking || !farmer) {
+  if (!booking) {
     return (
       <View style={styles.loadingContainer}>
         <Text style={styles.loadingText}>Loading...</Text>
@@ -107,12 +89,14 @@ export default function PilotBookingDetailsScreen() {
           <View style={styles.detailRow}>
             <MaterialCommunityIcons name="map-marker" size={24} color="#2ECC71" style={styles.icon} />
             <Text style={styles.label}>Location:</Text>
-            <Text style={styles.value}>{booking.job.farmLocation}</Text>
+            <TouchableOpacity onPress={() => Linking.openURL(`https://maps.google.com/?q=${booking.job.farmLocation}`)}>
+              <Text style={styles.mapText}>📍 Open Map</Text>
+            </TouchableOpacity>
           </View>
           <View style={styles.detailRow}>
             <MaterialCommunityIcons name="ruler-square" size={24} color="#2ECC71" style={styles.icon} />
             <Text style={styles.label}>Farm Area:</Text>
-            <Text style={styles.value}>{booking.job.farmArea || 'N/A'} Acre</Text>
+            <Text style={styles.value}>0 Acre</Text>
           </View>
           <View style={styles.detailRow}>
             <MaterialCommunityIcons name="calendar" size={24} color="#2ECC71" style={styles.icon} />
@@ -132,41 +116,27 @@ export default function PilotBookingDetailsScreen() {
           <View style={styles.detailRow}>
             <MaterialCommunityIcons name="information" size={24} color="#2ECC71" style={styles.icon} />
             <Text style={styles.label}>Status:</Text>
-            <Text style={[styles.value, { color: booking.status === 'Completed' ? '#2ECC71' : '#E74C3C' }]}>
-              {booking.status}
+            <Text style={[styles.value, { color: status === 'Completed' ? '#2ECC71' : '#E74C3C' }]}>
+              {status}
             </Text>
           </View>
-          <TouchableOpacity style={styles.mapButton} onPress={() => Linking.openURL(`https://maps.google.com/?q=${booking.job.farmLocation}`)}>
-            <Text style={styles.mapText}>📍 Open Map</Text>
-          </TouchableOpacity>
         </View>
 
-        {/* Farmer Contact Information */}
+        {/* Farmer Contact Placeholder */}
         <Text style={styles.sectionTitle}>Farmer Contact</Text>
         <View style={styles.card}>
-          <View style={styles.detailRow}>
-            <MaterialCommunityIcons name="account" size={24} color="#2ECC71" style={styles.icon} />
-            <Text style={styles.label}>Name:</Text>
-            <Text style={styles.value}>{farmer.name}</Text>
-          </View>
-          <View style={styles.detailRow}>
-            <MaterialCommunityIcons name="phone" size={24} color="#2ECC71" style={styles.icon} />
-            <Text style={styles.label}>Contact:</Text>
-            <Text style={styles.value}>{farmer.contactNo}</Text>
-          </View>
-          <TouchableOpacity style={styles.whatsappButton} onPress={handleWhatsApp}>
-            <MaterialCommunityIcons name="whatsapp" size={24} color="#FFF" style={styles.buttonIcon} />
-            <Text style={styles.buttonText}>Contact via WhatsApp</Text>
+          <TouchableOpacity style={styles.contactButton} onPress={handleContact}>
+            <Text style={styles.buttonText}>Contact</Text>
           </TouchableOpacity>
         </View>
 
         {/* Action Buttons */}
-        {booking.status === 'Accepted' && (
+        {status === 'Accepted' && (
           <TouchableOpacity style={styles.actionButton} onPress={handleStartJob}>
             <Text style={styles.buttonText}>Start Job</Text>
           </TouchableOpacity>
         )}
-        {booking.status === 'In Progress' && (
+        {status === 'In Progress' && (
           <TouchableOpacity style={styles.actionButton} onPress={handleCompleteJob}>
             <Text style={styles.buttonText}>Complete Job</Text>
           </TouchableOpacity>
@@ -242,16 +212,12 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: 'right',
   },
-  mapButton: {
-    marginTop: 10,
-    alignSelf: 'flex-end',
-  },
   mapText: {
     fontSize: 14,
     color: '#3498DB',
     fontWeight: '600',
   },
-  whatsappButton: {
+  contactButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -271,9 +237,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     color: '#FFF',
-  },
-  buttonIcon: {
-    marginRight: 5,
   },
   loadingContainer: {
     flex: 1,

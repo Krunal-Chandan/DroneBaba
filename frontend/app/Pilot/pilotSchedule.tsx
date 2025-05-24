@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { api } from '@/api/api';
@@ -10,7 +10,7 @@ type ScheduleItem = {
   job: {
     _id: string;
     farmLocation: string;
-    farmArea: string;
+    payDetails: string;
     droneId: { name: string };
   };
 };
@@ -18,20 +18,23 @@ type ScheduleItem = {
 export default function PilotScheduleScreen() {
   const [schedule, setSchedule] = useState<ScheduleItem[]>([]);
   const router = useRouter();
-  const pilotId = 'P001'; // Replace with actual pilot ID
 
   useEffect(() => {
     const fetchSchedule = async () => {
       try {
         const pilotSchedule = await api.getPilotSchedule();
-        setSchedule(pilotSchedule || []);
+        // Sort by date in ascending order
+        const sortedSchedule = (pilotSchedule || []).sort((a: ScheduleItem, b: ScheduleItem) => 
+          new Date(a.date).getTime() - new Date(b.date).getTime()
+        );
+        setSchedule(sortedSchedule);
       } catch (err: any) {
         console.error('Error fetching pilot schedule:', err);
       }
     };
 
     fetchSchedule();
-  }, [pilotId]);
+  }, []);
 
   return (
     <View style={styles.container}>
@@ -61,10 +64,9 @@ export default function PilotScheduleScreen() {
               </View>
               <Text style={styles.cardDetails}>
                 Time: {item.timeSlot}{'\n'}
-                Location: {item.job.farmLocation}{'\n'}
-                Farm Area: {item.job.farmArea || 'N/A'} Acre{'\n'}
-                Drone: {item.job.droneId.name}{'\n'}
-                Status: Accepted
+                Location: <Text style={styles.mapText} onPress={() => Linking.openURL(`https://maps.google.com/?q=${item.job.farmLocation}`)}>📍 Open Map</Text>{'\n'}
+                Farm Area: 0 Acre{'\n'}
+                Drone: {item.job.droneId.name}
               </Text>
             </View>
           ))
@@ -134,5 +136,10 @@ const styles = StyleSheet.create({
   cardDetails: {
     fontSize: 14,
     color: '#555',
+  },
+  mapText: {
+    fontSize: 14,
+    color: '#3498DB',
+    fontWeight: '600',
   },
 });

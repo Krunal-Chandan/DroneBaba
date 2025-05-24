@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, SafeAreaView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, SafeAreaView, Linking } from 'react-native';
 import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { api } from '@/api/api';
@@ -10,7 +10,7 @@ type Booking = {
   job: {
     _id: string;
     farmLocation: string;
-    farmArea: string;
+    payDetails: string;
     droneId: { name: string };
   };
 };
@@ -18,13 +18,15 @@ type Booking = {
 export default function PilotHomeScreen() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const router = useRouter();
-  const pilotId = 'P001'; // Replace with actual pilot ID (e.g., from auth context)
 
   useEffect(() => {
     const fetchBookings = async () => {
       try {
         const pilotSchedule = await api.getPilotSchedule();
-        setBookings(pilotSchedule || []);
+        // Filter bookings for today (May 23, 2025)
+        const today = '2025-05-23';
+        const todayBookings = (pilotSchedule || []).filter((booking: Booking) => booking.date === today);
+        setBookings(todayBookings);
       } catch (err: any) {
         console.error('Error fetching pilot bookings:', err);
       }
@@ -33,7 +35,7 @@ export default function PilotHomeScreen() {
     fetchBookings();
     const interval = setInterval(fetchBookings, 60000); // Refresh every minute
     return () => clearInterval(interval);
-  }, [pilotId]);
+  }, []);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -41,9 +43,6 @@ export default function PilotHomeScreen() {
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Pilot Dashboard</Text>
         <View style={{ flexDirection: 'row' }}>
-          {/* <TouchableOpacity style={{ marginRight: 10 }} onPress={() => router.push('/Pilot/pilotJobs')}>
-            <MaterialIcons name="work" size={28} color="#333" />
-          </TouchableOpacity> */}
           <TouchableOpacity style={{ marginRight: 10 }}>
             <MaterialIcons name="notifications" size={28} color="#333" />
           </TouchableOpacity>
@@ -54,12 +53,12 @@ export default function PilotHomeScreen() {
       </View>
 
       {/* Title */}
-      <Text style={styles.title}>Assigned Bookings</Text>
+      <Text style={styles.title}>Assigned Bookings (Today)</Text>
 
       {/* Bookings List */}
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {bookings.length === 0 ? (
-          <Text style={styles.noBookings}>No assigned bookings available.</Text>
+          <Text style={styles.noBookings}>No assigned bookings for today.</Text>
         ) : (
           bookings.map((booking, index) => (
             <TouchableOpacity
@@ -73,13 +72,16 @@ export default function PilotHomeScreen() {
               }
             >
               <View style={styles.cardHeader}>
-                <Text style={styles.cardTitle}>{booking.job.farmLocation}</Text>
+                <TouchableOpacity onPress={() => Linking.openURL(`https://maps.google.com/?q=${booking.job.farmLocation}`)}>
+                  <Text style={styles.mapText}>📍 Open Map</Text>
+                </TouchableOpacity>
                 <MaterialCommunityIcons name="drone" size={24} color="#2ECC71" />
               </View>
               <Text style={styles.cardDetails}>
-                Farm Area: {booking.job.farmArea || 'N/A'} Acre{'\n'}
-                Date & Time: {booking.date} at {booking.timeSlot}{'\n'}
-                Drone: {booking.job.droneId.name}
+                Farm Area: 0 Acre{'\n'}
+                Date & Time: {booking.date} {booking.timeSlot}{'\n'}
+                Drone: {booking.job.droneId.name}{'\n'}
+                Payment: ${booking.job.payDetails}
               </Text>
             </TouchableOpacity>
           ))
@@ -114,6 +116,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
+    // marginTop: 20,
   },
   headerTitle: {
     fontSize: 20,
@@ -154,10 +157,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 10,
   },
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
+  mapText: {
+    fontSize: 16,
+    color: '#3498DB',
+    fontWeight: '600',
   },
   cardDetails: {
     fontSize: 14,

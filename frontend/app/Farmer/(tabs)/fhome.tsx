@@ -58,7 +58,7 @@ export default function FarmerDashboard() {
         dronesData.forEach((drone: Drone) => {
           // console.log(`Drone ${drone.name} pricePerAcre:`, drone.pricePerAcre);
           if (!drone.pricePerAcre || drone.pricePerAcre === '0') {
-            console.warn(`Warning: pricePerAcre for drone ${drone.name} is invalid: ${drone.pricePerAcre}`);
+            // console.warn(`Warning: pricePerAcre for drone ${drone.name} is invalid: ${drone.pricePerAcre}`);
           }
         });
 
@@ -67,7 +67,7 @@ export default function FarmerDashboard() {
           schedulesData = await api.getSchedulesOfDroneOwner();
           console.log('✅ Fetched schedules:', schedulesData);
         } catch (err: any) {
-          console.warn('No schedules found, proceeding with empty schedules:', err.message);
+          // console.warn('No schedules found, proceeding with empty schedules:', err.message);
           schedulesData = [];
         }
 
