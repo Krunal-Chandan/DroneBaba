@@ -174,6 +174,14 @@ const jobSchema = new mongoose.Schema({
     type: mongoose.Types.ObjectId,
     ref: "User",
   },
+  farmArea: {
+    type: String,
+    required: true,
+  },
+  farmerMobile: {
+    type: String,
+    required: true,
+  },
 });
 
 export const jobModel = mongoose.model("Job", jobSchema);

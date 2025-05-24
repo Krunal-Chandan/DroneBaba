@@ -243,7 +243,7 @@ export const getScheduleOfDrone = async (req: Request, res: Response) => {
 export const getScheduleOfPilot = async (req: Request, res: Response) => {
   //@ts-ignore
   const userId = req.user;
-  const pilot = await pilotModel.findOne({ userId });
+  const pilot = await pilotModel.findOne({ userId }).select("schedule");
   if (!pilot) {
     res.status(404).json({
       message: "User not found in Pilot Model",
@@ -251,16 +251,9 @@ export const getScheduleOfPilot = async (req: Request, res: Response) => {
     return;
   }
 
-  const populatedPilot = pilot.schedule.map((s) =>
-    s.populate([
-      { path: "createdBy", select: "-password -role" },
-      { path: "droneId", select: "name type durability capacity pricePerAcre" },
-    ])
-  );
-
   try {
     res.status(200).json({
-      schedule: populatedPilot,
+      schedule: pilot.schedule,
     });
     return;
   } catch (error) {
