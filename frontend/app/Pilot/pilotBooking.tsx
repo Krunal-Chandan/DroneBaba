@@ -13,6 +13,8 @@ type Booking = {
     payDetails: string;
     createdBy: string;
     droneId: { name: string; _id: string };
+    farmArea?: string; // Optional field for farm area
+    farmerMobile?: string; // Optional field for farmer's WhatsApp number
   };
 };
 
@@ -61,7 +63,15 @@ export default function PilotBookingDetailsScreen() {
   };
 
   const handleContact = () => {
-    Alert.alert('Error', 'Invalid number');
+    if (booking?.job.farmerMobile) {
+      const phoneNumber = booking.job.farmerMobile;
+      const whatsappUrl = `https://wa.me/${phoneNumber}`;
+      Linking.openURL(whatsappUrl).catch(() => {
+        Alert.alert('Error', 'Unable to open WhatsApp. Please ensure it is installed.');
+      });
+    } else {
+      Alert.alert('Error', 'Invalid number');
+    }
   };
 
   if (!booking) {
@@ -96,7 +106,7 @@ export default function PilotBookingDetailsScreen() {
           <View style={styles.detailRow}>
             <MaterialCommunityIcons name="ruler-square" size={24} color="#2ECC71" style={styles.icon} />
             <Text style={styles.label}>Farm Area:</Text>
-            <Text style={styles.value}>0 Acre</Text>
+            <Text style={styles.value}>{booking.job.farmArea || '0 Acre'}</Text>
           </View>
           <View style={styles.detailRow}>
             <MaterialCommunityIcons name="calendar" size={24} color="#2ECC71" style={styles.icon} />

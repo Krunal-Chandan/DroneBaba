@@ -12,6 +12,8 @@ type ScheduleItem = {
     farmLocation: string;
     payDetails: string;
     droneId: { name: string };
+    farmArea?: string; // Optional field for farm area
+    farmerMobile?: string; // Optional field for farmer's WhatsApp number
   };
 };
 
@@ -65,7 +67,7 @@ export default function PilotScheduleScreen() {
               <Text style={styles.cardDetails}>
                 Time: {item.timeSlot}{'\n'}
                 Location: <Text style={styles.mapText} onPress={() => Linking.openURL(`https://maps.google.com/?q=${item.job.farmLocation}`)}>📍 Open Map</Text>{'\n'}
-                Farm Area: 0 Acre{'\n'}
+                Farm Area: {item.job.farmArea || '0 Acre'}{'\n'}
                 Drone: {item.job.droneId.name}
               </Text>
             </View>

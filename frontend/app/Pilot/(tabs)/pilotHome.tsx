@@ -12,6 +12,8 @@ type Booking = {
     farmLocation: string;
     payDetails: string;
     droneId: { name: string };
+    farmArea?: string; // Optional field for farm area
+    farmerMobile?: string; // Optional field for farmer's WhatsApp number
   };
 };
 
@@ -23,8 +25,8 @@ export default function PilotHomeScreen() {
     const fetchBookings = async () => {
       try {
         const pilotSchedule = await api.getPilotSchedule();
-        // Filter bookings for today (May 23, 2025)
-        const today = '2025-05-23';
+        // Get the current date dynamically in YYYY-MM-DD format
+        const today = new Date().toISOString().split('T')[0];
         const todayBookings = (pilotSchedule || []).filter((booking: Booking) => booking.date === today);
         setBookings(todayBookings);
       } catch (err: any) {
@@ -78,10 +80,10 @@ export default function PilotHomeScreen() {
                 <MaterialCommunityIcons name="drone" size={24} color="#2ECC71" />
               </View>
               <Text style={styles.cardDetails}>
-                Farm Area: 0 Acre{'\n'}
-                Date & Time: {booking.date} {booking.timeSlot}{'\n'}
+                Farm Area: {booking.job.farmArea || '0 Acre'}{'\n'}
+                📅 Date: {booking.date} ⌛Time: {booking.timeSlot}{'\n'}
                 Drone: {booking.job.droneId.name}{'\n'}
-                Payment: ${booking.job.payDetails}
+                Payment: ₹ {booking.job.payDetails}
               </Text>
             </TouchableOpacity>
           ))
@@ -163,7 +165,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   cardDetails: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#555',
   },
   fab: {
